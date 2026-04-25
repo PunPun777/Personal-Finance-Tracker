@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { useAuth } from "./hooks/useAuth";
+import { AuthProvider } from "./context/AuthProvider";
 import { AppLayout } from "./layouts/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
@@ -21,11 +22,19 @@ function AppRoutes() {
     <Routes>
       <Route
         path="/login"
-        element={<GuestRoute><Login /></GuestRoute>}
+        element={
+          <GuestRoute>
+            <Login />
+          </GuestRoute>
+        }
       />
       <Route
         path="/register"
-        element={<GuestRoute><Register /></GuestRoute>}
+        element={
+          <GuestRoute>
+            <Register />
+          </GuestRoute>
+        }
       />
 
       <Route element={<ProtectedRoute />}>

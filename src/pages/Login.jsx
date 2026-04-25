@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth.js";
 import { loginUser } from "../services/authService";
 
 export default function Login() {
@@ -95,14 +95,19 @@ export default function Login() {
                 onChange={handleChange("email")}
               />
               {errors.email && (
-                <p className="text-sm text-destructive font-medium">{errors.email}</p>
+                <p className="text-sm text-destructive font-medium">
+                  {errors.email}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link to="#" className="text-sm font-medium text-primary hover:underline">
+                <Link
+                  to="#"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -114,7 +119,9 @@ export default function Login() {
                 onChange={handleChange("password")}
               />
               {errors.password && (
-                <p className="text-sm text-destructive font-medium">{errors.password}</p>
+                <p className="text-sm text-destructive font-medium">
+                  {errors.password}
+                </p>
               )}
             </div>
           </CardContent>
@@ -132,7 +139,10 @@ export default function Login() {
             </Button>
             <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
-              <Link to="/register" className="font-medium text-primary hover:underline">
+              <Link
+                to="/register"
+                className="font-medium text-primary hover:underline"
+              >
                 Sign up
               </Link>
             </div>
