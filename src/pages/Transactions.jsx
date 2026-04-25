@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Pencil,
@@ -7,8 +7,17 @@ import {
   ArrowDownRight,
   AlertCircle,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -34,6 +43,24 @@ import {
 import TransactionForm from "../components/transactions/TransactionForm";
 import { useTransactions } from "../hooks/useTransactions";
 
+const CATEGORIES = [
+  "Food & Dining",
+  "Transportation",
+  "Shopping",
+  "Entertainment",
+  "Health & Medical",
+  "Housing & Rent",
+  "Utilities",
+  "Education",
+  "Travel",
+  "Personal Care",
+  "Investments",
+  "Salary",
+  "Freelance",
+  "Business",
+  "Other",
+];
+
 function TableSkeleton() {
   return Array.from({ length: 5 }).map((_, i) => (
     <TableRow key={i}>
@@ -53,6 +80,11 @@ export default function Transactions() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [feedback, setFeedback] = useState(null);
+
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterDate, setFilterDate] = useState("");
 
   const showFeedback = (message, type = "error") => {
     setFeedback({ message, type });
@@ -89,6 +121,19 @@ export default function Transactions() {
       showFeedback(result.message);
     }
   };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((t) => {
+      const matchSearch =
+        !searchQuery ||
+        (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchCategory = filterCategory === "all" || t.category === filterCategory;
+      const matchDate =
+        !filterDate || new Date(t.date).toISOString().split("T")[0] === filterDate;
+
+      return matchSearch && matchCategory && matchDate;
+    });
+  }, [transactions, searchQuery, filterCategory, filterDate]);
 
   return (
     <div className="space-y-6">
@@ -132,12 +177,64 @@ export default function Transactions() {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle>Recent Transactions</CardTitle>
           <CardDescription>
             A list of your recent income and expenses.
           </CardDescription>
         </CardHeader>
+        
+        <div className="px-6 pb-4 flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search description..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <div className="w-full sm:w-[200px]">
+             <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-full sm:w-[150px]">
+             <Input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="w-full"
+              />
+          </div>
+          
+          {(searchQuery || filterCategory !== "all" || filterDate) && (
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setSearchQuery("");
+                setFilterCategory("all");
+                setFilterDate("");
+              }}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+
         <CardContent>
           <div className="rounded-md border">
             <Table>
@@ -155,17 +252,17 @@ export default function Transactions() {
               <TableBody>
                 {isLoading ? (
                   <TableSkeleton />
-                ) : transactions.length === 0 ? (
+                ) : filteredTransactions.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={5}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No transactions found. Add your first one!
+                      {transactions.length === 0 ? "No transactions found. Add your first one!" : "No transactions match your filters."}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  transactions.map((t) => (
+                  filteredTransactions.map((t) => (
                     <TableRow key={t._id}>
                       <TableCell className="whitespace-nowrap">
                         {new Date(t.date).toLocaleDateString()}
