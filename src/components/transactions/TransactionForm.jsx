@@ -11,43 +11,35 @@ import {
 } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
 
-const CATEGORIES = [
-  "Food & Dining",
-  "Transportation",
-  "Shopping",
-  "Entertainment",
-  "Health & Medical",
-  "Housing & Rent",
-  "Utilities",
-  "Education",
-  "Travel",
-  "Personal Care",
-  "Investments",
-  "Salary",
-  "Freelance",
-  "Business",
-  "Other",
-];
+import { TRANSACTION_CATEGORIES } from "../../constants/transactionCategories";
+
+function buildFormState(data) {
+  if (!data) {
+    return {
+      type: "expense",
+      amount: "",
+      category: "",
+      date: new Date().toISOString().split("T")[0],
+      description: "",
+    };
+  }
+  return {
+    type: data.type || "expense",
+    amount: data.amount || "",
+    category: data.category || "",
+    date: data.date
+      ? new Date(data.date).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
+    description: data.description || "",
+  };
+}
 
 export default function TransactionForm({ initialData, isSubmitting = false, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    type: "expense",
-    amount: "",
-    category: "",
-    date: new Date().toISOString().split("T")[0],
-    description: "",
-  });
+  const [formData, setFormData] = useState(() => buildFormState(initialData));
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        type: initialData.type || "expense",
-        amount: initialData.amount || "",
-        category: initialData.category || "",
-        date: initialData.date ? new Date(initialData.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
-        description: initialData.description || "",
-      });
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData(buildFormState(initialData));
   }, [initialData]);
 
   const handleSubmit = (e) => {
@@ -66,13 +58,13 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="type">Type</Label>
+          <Label htmlFor="tx-type">Type</Label>
           <Select
             value={formData.type}
             onValueChange={(val) => handleChange("type", val)}
             required
           >
-            <SelectTrigger id="type">
+            <SelectTrigger id="tx-type">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
@@ -83,9 +75,9 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
+          <Label htmlFor="tx-amount">Amount</Label>
           <Input
-            id="amount"
+            id="tx-amount"
             type="number"
             step="0.01"
             min="0.01"
@@ -99,17 +91,17 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
+          <Label htmlFor="tx-category">Category</Label>
           <Select
             value={formData.category}
             onValueChange={(val) => handleChange("category", val)}
             required
           >
-            <SelectTrigger id="category">
+            <SelectTrigger id="tx-category">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map((cat) => (
+              {TRANSACTION_CATEGORIES.map((cat) => (
                 <SelectItem key={cat} value={cat}>
                   {cat}
                 </SelectItem>
@@ -119,9 +111,9 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="tx-date">Date</Label>
           <Input
-            id="date"
+            id="tx-date"
             type="date"
             value={formData.date}
             onChange={(e) => handleChange("date", e.target.value)}
@@ -131,9 +123,9 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description (Optional)</Label>
+        <Label htmlFor="tx-description">Description (Optional)</Label>
         <Input
-          id="description"
+          id="tx-description"
           placeholder="e.g., Groceries at Safeway"
           value={formData.description}
           onChange={(e) => handleChange("description", e.target.value)}

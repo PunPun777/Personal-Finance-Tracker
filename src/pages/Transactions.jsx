@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import {
   Plus,
   Pencil,
@@ -8,6 +8,7 @@ import {
   AlertCircle,
   RefreshCw,
   Search,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,25 +42,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import TransactionForm from "../components/transactions/TransactionForm";
+import { TRANSACTION_CATEGORIES } from "../constants/transactionCategories";
 import { useTransactions } from "../hooks/useTransactions";
 
-const CATEGORIES = [
-  "Food & Dining",
-  "Transportation",
-  "Shopping",
-  "Entertainment",
-  "Health & Medical",
-  "Housing & Rent",
-  "Utilities",
-  "Education",
-  "Travel",
-  "Personal Care",
-  "Investments",
-  "Salary",
-  "Freelance",
-  "Business",
-  "Other",
-];
+const AMOUNT_CONFIG = {
+  income: {
+    icon: ArrowUpRight,
+    iconClass: "text-emerald-500",
+    amountClass: "text-emerald-500 font-medium",
+  },
+  expense: {
+    icon: ArrowDownRight,
+    iconClass: "text-rose-500",
+    amountClass: "text-foreground font-medium",
+  },
+};
+
+function AmountCell({ type, amount }) {
+  const config = AMOUNT_CONFIG[type] ?? AMOUNT_CONFIG.expense;
+  const Icon = config.icon;
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Icon className={`h-4 w-4 ${config.iconClass}`} />
+      <span className={config.amountClass}>${Number(amount).toFixed(2)}</span>
+    </div>
+  );
+}
 
 function TableSkeleton() {
   return Array.from({ length: 5 }).map((_, i) => (
@@ -73,6 +81,24 @@ function TableSkeleton() {
   ));
 }
 
+function FeedbackBanner({ feedback }) {
+  if (!feedback) return null;
+  const isSuccess = feedback.type === "success";
+  const Icon = isSuccess ? CheckCircle2 : AlertCircle;
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm font-medium border ${
+        isSuccess
+          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+          : "bg-destructive/10 text-destructive border-destructive/20"
+      }`}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {feedback.message}
+    </div>
+  );
+}
+
 export default function Transactions() {
   const { transactions, isLoading, isSubmitting, error, create, update, remove, reload } =
     useTransactions();
@@ -80,16 +106,25 @@ export default function Transactions() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const feedbackTimer = useRef(null);
 
-  // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterDate, setFilterDate] = useState("");
 
-  const showFeedback = (message, type = "error") => {
+  const showFeedback = useCallback((message, type = "error") => {
+    clearTimeout(feedbackTimer.current);
     setFeedback({ message, type });
-    setTimeout(() => setFeedback(null), 4000);
-  };
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 4000);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery("");
+    setFilterCategory("all");
+    setFilterDate("");
+  }, []);
+
+  const hasActiveFilters = searchQuery || filterCategory !== "all" || filterDate;
 
   const handleOpenAddDialog = () => {
     setEditingTransaction(null);
@@ -123,14 +158,13 @@ export default function Transactions() {
   };
 
   const filteredTransactions = useMemo(() => {
+    const query = searchQuery.toLowerCase();
     return transactions.filter((t) => {
       const matchSearch =
-        !searchQuery ||
-        (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        !query || (t.description && t.description.toLowerCase().includes(query));
       const matchCategory = filterCategory === "all" || t.category === filterCategory;
       const matchDate =
         !filterDate || new Date(t.date).toISOString().split("T")[0] === filterDate;
-
       return matchSearch && matchCategory && matchDate;
     });
   }, [transactions, searchQuery, filterCategory, filterDate]);
@@ -150,18 +184,7 @@ export default function Transactions() {
         </Button>
       </div>
 
-      {feedback && (
-        <div
-          className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm font-medium ${
-            feedback.type === "success"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-              : "bg-destructive/10 text-destructive border border-destructive/20"
-          }`}
-        >
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {feedback.message}
-        </div>
-      )}
+      <FeedbackBanner feedback={feedback} />
 
       {error && !isLoading && (
         <div className="flex items-center justify-between gap-4 rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3">
@@ -179,11 +202,9 @@ export default function Transactions() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>
-            A list of your recent income and expenses.
-          </CardDescription>
+          <CardDescription>A list of your recent income and expenses.</CardDescription>
         </CardHeader>
-        
+
         <div className="px-6 pb-4 flex flex-col sm:flex-row gap-3 items-end sm:items-center">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -195,15 +216,15 @@ export default function Transactions() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          
+
           <div className="w-full sm:w-[200px]">
-             <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {CATEGORIES.map((cat) => (
+                {TRANSACTION_CATEGORIES.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>
@@ -213,23 +234,16 @@ export default function Transactions() {
           </div>
 
           <div className="w-full sm:w-[150px]">
-             <Input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full"
-              />
+            <Input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="w-full"
+            />
           </div>
-          
-          {(searchQuery || filterCategory !== "all" || filterDate) && (
-            <Button 
-              variant="ghost" 
-              onClick={() => {
-                setSearchQuery("");
-                setFilterCategory("all");
-                setFilterDate("");
-              }}
-            >
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
               Clear
             </Button>
           )}
@@ -244,9 +258,7 @@ export default function Transactions() {
                   <TableHead>Description</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="w-[100px] text-right">
-                    Actions
-                  </TableHead>
+                  <TableHead className="w-[100px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -258,7 +270,9 @@ export default function Transactions() {
                       colSpan={5}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      {transactions.length === 0 ? "No transactions found. Add your first one!" : "No transactions match your filters."}
+                      {transactions.length === 0
+                        ? "No transactions found. Add your first one!"
+                        : "No transactions match your filters."}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -276,22 +290,7 @@ export default function Transactions() {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {t.type === "income" ? (
-                            <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                          ) : (
-                            <ArrowDownRight className="h-4 w-4 text-rose-500" />
-                          )}
-                          <span
-                            className={
-                              t.type === "income"
-                                ? "text-emerald-500 font-medium"
-                                : "text-foreground font-medium"
-                            }
-                          >
-                            ${Number(t.amount).toFixed(2)}
-                          </span>
-                        </div>
+                        <AmountCell type={t.type} amount={t.amount} />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">

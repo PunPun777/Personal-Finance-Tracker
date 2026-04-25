@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchTransactions,
   createTransaction,
@@ -11,21 +11,28 @@ export function useTransactions() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const { data } = await fetchTransactions({ limit: 100, sortBy: "date", sortOrder: "desc" });
-      setTransactions(data.transactions);
+      if (isMounted.current) setTransactions(data.transactions);
     } catch (err) {
-      setError(err.message);
+      if (isMounted.current) setError(err.message);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
