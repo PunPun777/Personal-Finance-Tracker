@@ -5,6 +5,8 @@ import {
   Trash2,
   ArrowUpRight,
   ArrowDownRight,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,38 +32,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import TransactionForm from "../components/transactions/TransactionForm";
+import { useTransactions } from "../hooks/useTransactions";
 
-const MOCK_TRANSACTIONS = [
-  {
-    id: "1",
-    type: "income",
-    amount: 5000,
-    category: "Salary",
-    date: "2023-10-01",
-    description: "October Salary",
-  },
-  {
-    id: "2",
-    type: "expense",
-    amount: 120.5,
-    category: "Food & Dining",
-    date: "2023-10-02",
-    description: "Dinner at Luigi's",
-  },
-  {
-    id: "3",
-    type: "expense",
-    amount: 45.0,
-    category: "Transportation",
-    date: "2023-10-03",
-    description: "Gas station",
-  },
-];
+function TableSkeleton() {
+  return Array.from({ length: 5 }).map((_, i) => (
+    <TableRow key={i}>
+      {Array.from({ length: 5 }).map((__, j) => (
+        <TableCell key={j}>
+          <div className="h-4 bg-muted rounded animate-pulse" />
+        </TableCell>
+      ))}
+    </TableRow>
+  ));
+}
 
 export default function Transactions() {
-  const [transactions, setTransactions] = useState(MOCK_TRANSACTIONS);
+  const { transactions, isLoading, isSubmitting, error, create, update, remove, reload } =
+    useTransactions();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+
+  const showFeedback = (message, type = "error") => {
+    setFeedback({ message, type });
+    setTimeout(() => setFeedback(null), 4000);
+  };
 
   const handleOpenAddDialog = () => {
     setEditingTransaction(null);
@@ -73,24 +69,25 @@ export default function Transactions() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  const handleDelete = async (id) => {
+    const result = await remove(id);
+    if (!result.success) showFeedback(result.message);
   };
 
-  const handleSubmit = (formData) => {
-    if (editingTransaction) {
-      setTransactions((prev) =>
-        prev.map((t) =>
-          t.id === editingTransaction.id ? { ...t, ...formData } : t,
-        ),
+  const handleSubmit = async (formData) => {
+    const result = editingTransaction
+      ? await update(editingTransaction._id, formData)
+      : await create(formData);
+
+    if (result.success) {
+      setIsDialogOpen(false);
+      showFeedback(
+        editingTransaction ? "Transaction updated." : "Transaction added.",
+        "success"
       );
     } else {
-      setTransactions((prev) => [
-        { ...formData, id: Math.random().toString(36).substr(2, 9) },
-        ...prev,
-      ]);
+      showFeedback(result.message);
     }
-    setIsDialogOpen(false);
   };
 
   return (
@@ -107,6 +104,32 @@ export default function Transactions() {
           Add Transaction
         </Button>
       </div>
+
+      {feedback && (
+        <div
+          className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm font-medium ${
+            feedback.type === "success"
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              : "bg-destructive/10 text-destructive border border-destructive/20"
+          }`}
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {feedback.message}
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <div className="flex items-center justify-between gap-4 rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-destructive font-medium">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+          <Button variant="outline" size="sm" onClick={reload} className="gap-2 shrink-0">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -130,44 +153,46 @@ export default function Transactions() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.length === 0 ? (
+                {isLoading ? (
+                  <TableSkeleton />
+                ) : transactions.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={5}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No transactions found.
+                      No transactions found. Add your first one!
                     </TableCell>
                   </TableRow>
                 ) : (
-                  transactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
+                  transactions.map((t) => (
+                    <TableRow key={t._id}>
                       <TableCell className="whitespace-nowrap">
-                        {new Date(transaction.date).toLocaleDateString()}
+                        {new Date(t.date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {transaction.description || "-"}
+                        {t.description || "-"}
                       </TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                          {transaction.category}
+                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold">
+                          {t.category}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {transaction.type === "income" ? (
+                          {t.type === "income" ? (
                             <ArrowUpRight className="h-4 w-4 text-emerald-500" />
                           ) : (
                             <ArrowDownRight className="h-4 w-4 text-rose-500" />
                           )}
                           <span
                             className={
-                              transaction.type === "income"
+                              t.type === "income"
                                 ? "text-emerald-500 font-medium"
                                 : "text-foreground font-medium"
                             }
                           >
-                            ${Number(transaction.amount).toFixed(2)}
+                            ${Number(t.amount).toFixed(2)}
                           </span>
                         </div>
                       </TableCell>
@@ -176,7 +201,7 @@ export default function Transactions() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleOpenEditDialog(transaction)}
+                            onClick={() => handleOpenEditDialog(t)}
                             className="h-8 w-8 text-muted-foreground hover:text-primary"
                           >
                             <Pencil className="h-4 w-4" />
@@ -185,7 +210,7 @@ export default function Transactions() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(transaction.id)}
+                            onClick={() => handleDelete(t._id)}
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -216,6 +241,7 @@ export default function Transactions() {
           </DialogHeader>
           <TransactionForm
             initialData={editingTransaction}
+            isSubmitting={isSubmitting}
             onSubmit={handleSubmit}
             onCancel={() => setIsDialogOpen(false)}
           />

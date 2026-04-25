@@ -29,7 +29,7 @@ const CATEGORIES = [
   "Other",
 ];
 
-export default function TransactionForm({ initialData, onSubmit, onCancel }) {
+export default function TransactionForm({ initialData, isSubmitting = false, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     type: "expense",
     amount: "",
@@ -141,11 +141,20 @@ export default function TransactionForm({ initialData, onSubmit, onCancel }) {
       </div>
 
       <DialogFooter className="pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">
-          {initialData ? "Update Transaction" : "Add Transaction"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              Saving…
+            </span>
+          ) : initialData ? (
+            "Update Transaction"
+          ) : (
+            "Add Transaction"
+          )}
         </Button>
       </DialogFooter>
     </form>
