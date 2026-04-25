@@ -115,8 +115,6 @@ This application provides:
 
 ---
 
----
-
 ## 📚 Documentation
 
 Detailed system design and specifications are available in:
