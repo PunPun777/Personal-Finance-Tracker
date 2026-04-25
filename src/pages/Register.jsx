@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { registerUser } from "../services/authService";
 
 export default function Register() {
@@ -83,7 +83,9 @@ export default function Register() {
           <CardTitle className="text-2xl font-bold tracking-tight">
             Create an account
           </CardTitle>
-          <CardDescription>Enter your information to get started</CardDescription>
+          <CardDescription>
+            Enter your information to get started
+          </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -105,7 +107,9 @@ export default function Register() {
                 onChange={handleChange("name")}
               />
               {errors.name && (
-                <p className="text-sm text-destructive font-medium">{errors.name}</p>
+                <p className="text-sm text-destructive font-medium">
+                  {errors.name}
+                </p>
               )}
             </div>
 
@@ -120,7 +124,9 @@ export default function Register() {
                 onChange={handleChange("email")}
               />
               {errors.email && (
-                <p className="text-sm text-destructive font-medium">{errors.email}</p>
+                <p className="text-sm text-destructive font-medium">
+                  {errors.email}
+                </p>
               )}
             </div>
 
@@ -134,7 +140,9 @@ export default function Register() {
                 onChange={handleChange("password")}
               />
               {errors.password && (
-                <p className="text-sm text-destructive font-medium">{errors.password}</p>
+                <p className="text-sm text-destructive font-medium">
+                  {errors.password}
+                </p>
               )}
             </div>
 
@@ -168,7 +176,10 @@ export default function Register() {
             </Button>
             <div className="text-center text-sm">
               Already have an account?{" "}
-              <Link to="/login" className="font-medium text-primary hover:underline">
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:underline"
+              >
                 Log in
               </Link>
             </div>

@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 const NAV_LINKS = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
