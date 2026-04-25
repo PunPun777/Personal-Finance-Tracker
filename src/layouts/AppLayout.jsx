@@ -1,14 +1,33 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
-import { Menu, Wallet, LayoutDashboard, Target, Activity } from "lucide-react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  Menu,
+  Wallet,
+  LayoutDashboard,
+  Target,
+  Activity,
+  PiggyBank,
+  CreditCard,
+  LogOut,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_LINKS = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
   { name: "Transactions", path: "/transactions", icon: Activity },
-  { name: "Budgets", path: "/budgets", icon: Wallet },
+  { name: "Budgets", path: "/budgets", icon: PiggyBank },
   { name: "Goals", path: "/goals", icon: Target },
-  { name: "Accounts", path: "/accounts", icon: Wallet },
+  { name: "Accounts", path: "/accounts", icon: CreditCard },
 ];
 
 const NavItems = ({ location }) => (
@@ -33,6 +52,50 @@ const NavItems = ({ location }) => (
     })}
   </>
 );
+
+function UserMenu() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="h-8 w-8 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center ring-2 ring-border hover:ring-primary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {initials}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel className="font-normal">
+          <p className="font-semibold text-sm truncate">{user?.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled className="gap-2 text-sm">
+          <User className="h-4 w-4" />
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={handleLogout}
+          className="gap-2 text-sm text-destructive focus:text-destructive"
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function Navbar() {
   const location = useLocation();
 
@@ -55,16 +118,15 @@ function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-4">
-              {/* Future User Menu Placeholder */}
-              <div className="h-8 w-8 rounded-full bg-muted border border-border" />
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block">
+              <UserMenu />
             </div>
 
             <div className="md:hidden">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
+                  <Button variant="ghost" size="icon">
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Toggle navigation menu</span>
                   </Button>
@@ -79,6 +141,9 @@ function Navbar() {
                     </Link>
                     <div className="flex flex-col gap-2">
                       <NavItems location={location} />
+                    </div>
+                    <div className="mt-auto px-2">
+                      <UserMenu />
                     </div>
                   </div>
                 </SheetContent>
