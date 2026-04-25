@@ -25,4 +25,12 @@ export default defineConfig([
       globals: globals.node,
     },
   },
+  {
+    files: ["tailwind.config.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ]);
