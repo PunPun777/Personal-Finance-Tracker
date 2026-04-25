@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,10 +11,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "../context/AuthContext";
+import { loginUser } from "../services/authService";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
     const newErrors = {};
@@ -29,16 +36,32 @@ export default function Login() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError("");
+
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-    } else {
-      setErrors({});
-      console.log("Login form submitted:", formData);
-      // Simulate API call
+      return;
     }
+    setErrors({});
+
+    setIsLoading(true);
+    try {
+      const { data } = await loginUser(formData);
+      login(data.token, data.user);
+      navigate("/");
+    } catch (err) {
+      setApiError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (field) => (e) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   return (
@@ -52,44 +75,63 @@ export default function Login() {
             Enter your email and password to log in to your account
           </CardDescription>
         </CardHeader>
+
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {apiError && (
+              <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive font-medium">
+                {apiError}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="m@example.com"
+                autoComplete="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleChange("email")}
               />
-              {errors.email && <p className="text-sm text-destructive font-medium">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-sm text-destructive font-medium">{errors.email}</p>
+              )}
             </div>
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  to="#"
-                  className="text-sm font-medium text-primary hover:underline"
-                >
+                <Link to="#" className="text-sm font-medium text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={handleChange("password")}
               />
-              {errors.password && <p className="text-sm text-destructive font-medium">{errors.password}</p>}
+              {errors.password && (
+                <p className="text-sm text-destructive font-medium">{errors.password}</p>
+              )}
             </div>
           </CardContent>
+
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full">
-              Log in
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  Logging in…
+                </span>
+              ) : (
+                "Log in"
+              )}
             </Button>
             <div className="text-center text-sm">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link to="/register" className="font-medium text-primary hover:underline">
                 Sign up
               </Link>
