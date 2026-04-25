@@ -63,7 +63,12 @@ function UserMenu() {
   };
 
   const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "?";
 
   return (
@@ -96,6 +101,25 @@ function UserMenu() {
   );
 }
 
+function NavActions() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/login">Log in</Link>
+        </Button>
+        <Button size="sm" asChild>
+          <Link to="/register">Sign up</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return <UserMenu />;
+}
+
 function Navbar() {
   const location = useLocation();
 
@@ -120,7 +144,7 @@ function Navbar() {
 
           <div className="flex items-center gap-3">
             <div className="hidden md:block">
-              <UserMenu />
+              <NavActions />
             </div>
 
             <div className="md:hidden">
@@ -143,7 +167,7 @@ function Navbar() {
                       <NavItems location={location} />
                     </div>
                     <div className="mt-auto px-2">
-                      <UserMenu />
+                      <NavActions />
                     </div>
                   </div>
                 </SheetContent>
