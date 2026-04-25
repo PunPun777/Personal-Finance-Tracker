@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -10,35 +11,37 @@ import {
 } from "@/components/ui/dialog";
 import GoalCard from "../components/goals/GoalCard";
 import GoalForm from "../components/goals/GoalForm";
+import { useGoals } from "../hooks/useGoals";
 
-const MOCK_GOALS = [
-  {
-    id: "1",
-    title: "New Laptop",
-    targetAmount: 2000,
-    savedAmount: 850,
-    targetDate: "2024-06-01",
-  },
-  {
-    id: "2",
-    title: "Emergency Fund",
-    targetAmount: 10000,
-    savedAmount: 4500,
-    targetDate: "2024-12-31",
-  },
-  {
-    id: "3",
-    title: "Summer Vacation",
-    targetAmount: 3000,
-    savedAmount: 3000,
-    targetDate: "2023-08-15",
-  },
-];
+function GoalCardSkeleton() {
+  return (
+    <Card className="flex flex-col">
+      <CardContent className="p-6 space-y-4">
+        <div className="h-5 w-2/3 bg-muted rounded animate-pulse" />
+        <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
+        <div className="space-y-2 pt-4">
+          <div className="flex justify-between">
+            <div className="h-8 w-1/3 bg-muted rounded animate-pulse" />
+            <div className="h-6 w-1/4 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-2 w-full bg-muted rounded animate-pulse" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Goals() {
-  const [goals, setGoals] = useState(MOCK_GOALS);
+  const { goals, isLoading, isSubmitting, error, create, update, remove, reload } = useGoals();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+
+  const showFeedback = (message, type = "error") => {
+    setFeedback({ message, type });
+    setTimeout(() => setFeedback(null), 4000);
+  };
 
   const handleOpenAddDialog = () => {
     setEditingGoal(null);
@@ -50,22 +53,25 @@ export default function Goals() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id) => {
-    setGoals((prev) => prev.filter((g) => g.id !== id));
+  const handleDelete = async (id) => {
+    const result = await remove(id);
+    if (!result.success) showFeedback(result.message);
   };
 
-  const handleSubmit = (formData) => {
-    if (editingGoal) {
-      setGoals((prev) =>
-        prev.map((g) => (g.id === editingGoal.id ? { ...g, ...formData } : g))
+  const handleSubmit = async (formData) => {
+    const result = editingGoal
+      ? await update(editingGoal._id, formData)
+      : await create(formData);
+
+    if (result.success) {
+      setIsDialogOpen(false);
+      showFeedback(
+        editingGoal ? "Goal updated." : "Goal created.",
+        "success"
       );
     } else {
-      setGoals((prev) => [
-        { ...formData, id: Math.random().toString(36).substr(2, 9) },
-        ...prev,
-      ]);
+      showFeedback(result.message);
     }
-    setIsDialogOpen(false);
   };
 
   return (
@@ -83,11 +89,43 @@ export default function Goals() {
         </Button>
       </div>
 
-      {goals.length === 0 ? (
+      {feedback && (
+        <div
+          className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm font-medium ${
+            feedback.type === "success"
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              : "bg-destructive/10 text-destructive border border-destructive/20"
+          }`}
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {feedback.message}
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <div className="flex items-center justify-between gap-4 rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-destructive font-medium">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+          <Button variant="outline" size="sm" onClick={reload} className="gap-2 shrink-0">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <GoalCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : goals.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center rounded-lg border bg-card text-card-foreground shadow-sm">
           <h3 className="mt-4 text-lg font-semibold">No goals created</h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            You haven't added any financial goals yet. Start saving by creating one!
+            You haven&apos;t added any financial goals yet. Start saving by creating one!
           </p>
           <Button onClick={handleOpenAddDialog} className="mt-6 gap-2">
             <Plus className="h-4 w-4" />
@@ -98,7 +136,7 @@ export default function Goals() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {goals.map((goal) => (
             <GoalCard
-              key={goal.id}
+              key={goal._id}
               goal={goal}
               onEdit={handleOpenEditDialog}
               onDelete={handleDelete}
@@ -119,6 +157,7 @@ export default function Goals() {
           </DialogHeader>
           <GoalForm
             initialData={editingGoal}
+            isSubmitting={isSubmitting}
             onSubmit={handleSubmit}
             onCancel={() => setIsDialogOpen(false)}
           />

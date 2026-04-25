@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DialogFooter } from "@/components/ui/dialog";
 
-export default function GoalForm({ initialData, onSubmit, onCancel }) {
+export default function GoalForm({ initialData, isSubmitting = false, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: "",
     targetAmount: "",
@@ -93,11 +93,20 @@ export default function GoalForm({ initialData, onSubmit, onCancel }) {
       </div>
 
       <DialogFooter className="pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">
-          {initialData ? "Update Goal" : "Create Goal"}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              Saving…
+            </span>
+          ) : initialData ? (
+            "Update Goal"
+          ) : (
+            "Create Goal"
+          )}
         </Button>
       </DialogFooter>
     </form>
