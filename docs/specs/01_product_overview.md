@@ -1,0 +1,56 @@
+# 💡 AI-Powered Personal Finance Tracker
+
+## 🎯 Vision
+
+Build a production-grade personal finance platform that helps users:
+
+- Track income and expenses
+- Understand spending behavior
+- Plan future financial goals
+- Improve financial decisions
+
+## 🚨 Problem Statement
+
+Most users:
+
+- Do not track expenses consistently
+- Lack insights into spending patterns
+- Cannot plan future financial goals effectively
+- Overspend without awareness
+
+## 💡 Solution
+
+A full-stack finance tracker that:
+
+- Captures financial data
+- Visualizes insights
+- Enables goal-based financial planning
+- (Future) Uses ML for predictions and recommendations
+
+## 🎯 Goals
+
+### Phase 1 (MERN)
+
+- Build complete manual tracking system
+- Enable goal planning and tracking
+- Ensure clean, structured data collection
+
+### Phase 2 (AI Integration)
+
+- Automate categorization
+- Predict future expenses
+- Analyze goal feasibility
+- Provide smart financial recommendations
+
+## 🧑‍💻 Target Users
+
+- Students
+- Young professionals
+- Budget-conscious individuals
+
+## 🏆 Success Criteria
+
+- Users can track expenses easily
+- Users can set and track financial goals
+- Dashboard provides clear insights
+- System is scalable and ML-ready
