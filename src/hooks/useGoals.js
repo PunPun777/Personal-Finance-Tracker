@@ -20,7 +20,33 @@ export function computeGoalProgress(goal) {
   const isCompleted = saved >= target;
   const isOverAchieved = saved > target;
 
-  return { percentage, remaining, isCompleted, isOverAchieved, rawPercentage };
+  let status = "on-track";
+  if (isCompleted) {
+    status = "completed";
+  } else if (goal.targetDate) {
+    const today = new Date();
+    const targetDate = new Date(goal.targetDate);
+    
+    if (targetDate < today) {
+      status = "at-risk";
+    } else if (goal.createdAt) {
+      const createdAt = new Date(goal.createdAt);
+      const totalDays = (targetDate - createdAt) / (1000 * 60 * 60 * 24);
+      const daysPassed = (today - createdAt) / (1000 * 60 * 60 * 24);
+      const timePercentage = (daysPassed / totalDays) * 100;
+      
+      if (timePercentage > percentage + 15) {
+        status = "at-risk";
+      }
+    } else {
+       const daysLeft = (targetDate - today) / (1000 * 60 * 60 * 24);
+       if (daysLeft < 30 && percentage < 80) {
+         status = "at-risk";
+       }
+    }
+  }
+
+  return { percentage, remaining, isCompleted, isOverAchieved, rawPercentage, status };
 }
 
 export function useGoals() {
