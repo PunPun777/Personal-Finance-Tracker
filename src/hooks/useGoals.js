@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchGoals,
   createGoal,
@@ -11,7 +11,7 @@ export function computeGoalProgress(goal) {
   const saved = Number(goal.savedAmount) || 0;
 
   if (target === 0) {
-    return { percentage: 0, remaining: 0, isCompleted: false, isOverAchieved: false };
+    return { percentage: 0, remaining: 0, isCompleted: false, isOverAchieved: false, status: "on-track" };
   }
 
   const rawPercentage = (saved / target) * 100;
@@ -26,7 +26,7 @@ export function computeGoalProgress(goal) {
   } else if (goal.targetDate) {
     const today = new Date();
     const targetDate = new Date(goal.targetDate);
-    
+
     if (targetDate < today) {
       status = "at-risk";
     } else if (goal.createdAt) {
@@ -34,15 +34,14 @@ export function computeGoalProgress(goal) {
       const totalDays = (targetDate - createdAt) / (1000 * 60 * 60 * 24);
       const daysPassed = (today - createdAt) / (1000 * 60 * 60 * 24);
       const timePercentage = (daysPassed / totalDays) * 100;
-      
       if (timePercentage > percentage + 15) {
         status = "at-risk";
       }
     } else {
-       const daysLeft = (targetDate - today) / (1000 * 60 * 60 * 24);
-       if (daysLeft < 30 && percentage < 80) {
-         status = "at-risk";
-       }
+      const daysLeft = (targetDate - today) / (1000 * 60 * 60 * 24);
+      if (daysLeft < 30 && percentage < 80) {
+        status = "at-risk";
+      }
     }
   }
 
@@ -54,21 +53,28 @@ export function useGoals() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const { data } = await fetchGoals();
-      setGoals(data.goals);
+      if (isMounted.current) setGoals(data.goals);
     } catch (err) {
-      setError(err.message);
+      if (isMounted.current) setError(err.message);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 

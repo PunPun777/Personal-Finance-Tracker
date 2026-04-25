@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Plus, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,11 +37,13 @@ export default function Goals() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const feedbackTimer = useRef(null);
 
-  const showFeedback = (message, type = "error") => {
+  const showFeedback = useCallback((message, type = "error") => {
+    clearTimeout(feedbackTimer.current);
     setFeedback({ message, type });
-    setTimeout(() => setFeedback(null), 4000);
-  };
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 4000);
+  }, []);
 
   const handleOpenAddDialog = () => {
     setEditingGoal(null);
