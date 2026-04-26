@@ -42,7 +42,7 @@ const NavItems = ({ location }) => (
           to={link.path}
           className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
             isActive
-              ? "bg-primary text-primary-foreground"
+              ? "bg-gradient-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           }`}
         >
@@ -75,7 +75,7 @@ function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-8 w-8 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center ring-2 ring-border hover:ring-primary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button className="h-8 w-8 rounded-full bg-gradient-primary text-primary-foreground text-xs font-semibold flex items-center justify-center ring-2 ring-border hover:ring-primary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {initials}
         </button>
       </DropdownMenuTrigger>
@@ -127,15 +127,15 @@ function Navbar() {
   const location = useLocation();
 
   return (
-    <nav className="border-b bg-background sticky top-0 z-50">
+    <nav className="border-b bg-gradient-navbar backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
-              <div className="bg-primary text-primary-foreground p-1.5 rounded-lg">
+              <div className="bg-gradient-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
                 <Wallet className="h-5 w-5" />
               </div>
-              <span className="font-bold text-lg hidden sm:block tracking-tight">
+              <span className="font-bold text-lg hidden sm:block tracking-tight text-gradient-primary">
                 FinTrack
               </span>
             </Link>
@@ -162,10 +162,10 @@ function Navbar() {
                 <SheetContent side="left" className="w-[240px] sm:w-[300px]">
                   <div className="flex flex-col gap-6 py-6">
                     <Link to="/" className="flex items-center gap-2 px-2">
-                      <div className="bg-primary text-primary-foreground p-1.5 rounded-lg">
+                      <div className="bg-gradient-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
                         <Wallet className="h-5 w-5" />
                       </div>
-                      <span className="font-bold text-lg">FinTrack</span>
+                      <span className="font-bold text-lg text-gradient-primary">FinTrack</span>
                     </Link>
                   <div className="flex flex-col gap-2">
                       <NavItems location={location} />

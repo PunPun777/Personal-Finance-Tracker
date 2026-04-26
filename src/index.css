@@ -6,14 +6,17 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 220 14% 98%;
+    --foreground: 222.2 47.4% 11.2%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222.2 47.4% 11.2%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    
+    /* Modern Indigo/Violet Primary */
+    --primary: 250 84% 54%;
     --primary-foreground: 210 40% 98%;
+    
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
@@ -24,30 +27,43 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 250 84% 54%;
     --radius: 0.5rem;
+
+    /* Gradient Colors */
+    --gradient-start: 250 84% 54%; /* Indigo */
+    --gradient-mid: 270 70% 55%;   /* Violet */
+    --gradient-end: 220 90% 55%;   /* Blue */
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 240 10% 5%; /* Soft dark gray/black */
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 240 10% 7%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 240 10% 7%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 240 3.7% 15.9%;
+    
+    /* Deeper Indigo/Violet Primary for Dark Mode */
+    --primary: 250 84% 65%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 240 5% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 5% 15%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 240 5% 15%;
+    --input: 240 5% 15%;
+    --ring: 250 84% 65%;
+
+    /* Deeper Gradient Colors for Dark Mode */
+    --gradient-start: 250 70% 45%; 
+    --gradient-mid: 270 60% 45%;   
+    --gradient-end: 220 70% 45%;   
   }
 }
 
@@ -63,5 +79,34 @@
   /* Add subtle scale transition to all cards on hover to make it feel premium */
   .card-hover-effect {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-md;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-primary {
+    background-image: linear-gradient(to right, hsl(var(--gradient-start)), hsl(var(--gradient-mid)), hsl(var(--gradient-end)));
+  }
+  .bg-gradient-navbar {
+    background-image: linear-gradient(to right, hsl(var(--background)), hsl(var(--muted)));
+  }
+  .text-gradient-primary {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(to right, hsl(var(--gradient-start)), hsl(var(--gradient-end)));
+  }
+  .card-gradient-accent {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-gradient-accent::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background-image: linear-gradient(to right, hsl(var(--gradient-start)), hsl(var(--gradient-mid)), hsl(var(--gradient-end)));
+    opacity: 0.9;
   }
 }
