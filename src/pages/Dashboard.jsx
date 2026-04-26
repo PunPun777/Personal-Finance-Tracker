@@ -18,10 +18,16 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
 } from "recharts";
 import SummaryCard from "../components/dashboard/SummaryCard";
 
@@ -33,6 +39,14 @@ const MOCK_CHART_DATA = [
   { name: "May", income: 1890, expenses: 4800 },
   { name: "Jun", income: 2390, expenses: 3800 },
   { name: "Jul", income: 3490, expenses: 4300 },
+];
+
+const MOCK_CATEGORY_SPENDING = [
+  { name: "Housing", value: 1500, color: "#3b82f6" }, 
+  { name: "Food", value: 600, color: "#10b981" }, 
+  { name: "Transport", value: 400, color: "#f59e0b" }, 
+  { name: "Utilities", value: 300, color: "#8b5cf6" }, 
+  { name: "Entertainment", value: 200, color: "#ec4899" }, 
 ];
 
 const MOCK_RECENT_TRANSACTIONS = [
@@ -120,12 +134,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
                   data={MOCK_CHART_DATA}
-                  margin={{
-                    top: 10,
-                    right: 30,
-                    left: 0,
-                    bottom: 0,
-                  }}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -138,42 +147,79 @@ export default function Dashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    padding={{ left: 10, right: 10 }}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `$${value}`}
-                  />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} padding={{ left: 10, right: 10 }} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                  <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "8px", border: "1px solid hsl(var(--border))" }} itemStyle={{ color: "hsl(var(--foreground))" }} />
+                  <Area type="monotone" dataKey="income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="expenses" stroke="#f43f5e" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-1 lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Category Spending</CardTitle>
+            <CardDescription>
+              Your expenses breakdown by category.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={MOCK_CATEGORY_SPENDING}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {MOCK_CATEGORY_SPENDING.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
                   <Tooltip
+                    formatter={(value) => `$${value}`}
                     contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "8px", border: "1px solid hsl(var(--border))" }}
                     itemStyle={{ color: "hsl(var(--foreground))" }}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    stroke="#10b981"
-                    fillOpacity={1}
-                    fill="url(#colorIncome)"
-                    strokeWidth={2}
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="md:col-span-1 lg:col-span-4">
+          <CardHeader>
+            <CardTitle>Monthly Expenses</CardTitle>
+            <CardDescription>
+              Your total expenses month over month.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={MOCK_CHART_DATA}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                  <Tooltip
+                    cursor={{ fill: "hsl(var(--muted))" }}
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", borderRadius: "8px", border: "1px solid hsl(var(--border))" }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="#f43f5e"
-                    fillOpacity={1}
-                    fill="url(#colorExpense)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
+                  <Bar dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
