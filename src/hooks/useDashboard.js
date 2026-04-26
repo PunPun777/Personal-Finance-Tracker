@@ -1,0 +1,224 @@
+import { useState, useEffect, useCallback, useRef } from "react";
+import { fetchDashboardTransactions, fetchDashboardGoals } from "../services/dashboardService";
+import { CATEGORY_COLORS } from "../constants/chartColors";
+
+function buildMonthKey(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getShortMonth(dateStr) {
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+}
+
+function formatAmount(value) {
+  return `$${Number(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function computeDashboardData(transactions) {
+  let totalIncome = 0;
+  let totalExpenses = 0;
+
+  const categoryMap = {};
+  const monthMap = {};
+
+  for (const t of transactions) {
+    const amount = Number(t.amount) || 0;
+
+    if (t.type === "income") {
+      totalIncome += amount;
+      const mk = buildMonthKey(t.date);
+      if (!monthMap[mk]) {
+        monthMap[mk] = { name: getShortMonth(t.date), income: 0, expenses: 0, _key: mk };
+      }
+      monthMap[mk].income += amount;
+    } else {
+      totalExpenses += amount;
+      if (t.category) {
+        categoryMap[t.category] = (categoryMap[t.category] || 0) + amount;
+      }
+      const mk = buildMonthKey(t.date);
+      if (!monthMap[mk]) {
+        monthMap[mk] = { name: getShortMonth(t.date), income: 0, expenses: 0, _key: mk };
+      }
+      monthMap[mk].expenses += amount;
+    }
+  }
+
+  const categorySpending = Object.entries(categoryMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, value], i) => ({
+      name,
+      value: Math.round(value * 100) / 100,
+      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+    }));
+
+  const monthlyData = Object.values(monthMap)
+    .sort((a, b) => a._key.localeCompare(b._key))
+    .slice(-7)
+    .map(({ name, income, expenses }) => ({
+      name,
+      income: Math.round(income * 100) / 100,
+      expenses: Math.round(expenses * 100) / 100,
+    }));
+
+  const savings = totalIncome - totalExpenses;
+
+  return { totalIncome, totalExpenses, savings, categorySpending, monthlyData, monthMap };
+}
+
+export function computeInsights(monthMap, goals) {
+  const insights = [];
+  const months = Object.values(monthMap).sort((a, b) => a._key.localeCompare(b._key));
+
+  if (months.length >= 2) {
+    const prev = months[months.length - 2];
+    const curr = months[months.length - 1];
+
+    if (prev.expenses > 0) {
+      const expenseDiff = curr.expenses - prev.expenses;
+      const expensePct = Math.abs((expenseDiff / prev.expenses) * 100).toFixed(0);
+      if (expenseDiff > 0) {
+        insights.push({
+          id: "expense-up",
+          type: "warning",
+          title: "Spending increased",
+          message: `You spent ${expensePct}% more this month compared to last month.`,
+        });
+      } else if (expenseDiff < 0) {
+        insights.push({
+          id: "expense-down",
+          type: "success",
+          title: "Spending reduced",
+          message: `You spent ${expensePct}% less this month compared to last month. Great discipline!`,
+        });
+      }
+    }
+
+    if (prev.income > 0) {
+      const incomeDiff = curr.income - prev.income;
+      const incomePct = Math.abs((incomeDiff / prev.income) * 100).toFixed(0);
+      if (incomeDiff > 0) {
+        insights.push({
+          id: "income-up",
+          type: "success",
+          title: "Income grew",
+          message: `Your income increased by ${incomePct}% compared to last month.`,
+        });
+      } else if (incomeDiff < 0) {
+        insights.push({
+          id: "income-down",
+          type: "warning",
+          title: "Income dropped",
+          message: `Your income decreased by ${incomePct}% compared to last month.`,
+        });
+      }
+    }
+
+    const prevSavings = prev.income - prev.expenses;
+    const currSavings = curr.income - curr.expenses;
+    if (prevSavings < currSavings && currSavings > 0) {
+      insights.push({
+        id: "savings-up",
+        type: "success",
+        title: "Savings improved",
+        message: `Your net savings increased this month. You saved ${formatAmount(currSavings)}.`,
+      });
+    } else if (currSavings < 0) {
+      insights.push({
+        id: "savings-deficit",
+        type: "danger",
+        title: "Spending exceeds income",
+        message: `Your expenses exceeded your income by ${formatAmount(Math.abs(currSavings))} this month.`,
+      });
+    }
+
+    const expenseToIncomeRatio = curr.income > 0 ? (curr.expenses / curr.income) * 100 : 0;
+    if (expenseToIncomeRatio > 80 && expenseToIncomeRatio <= 100) {
+      insights.push({
+        id: "high-ratio",
+        type: "warning",
+        title: "High expense ratio",
+        message: `You're spending ${expenseToIncomeRatio.toFixed(0)}% of your income. Consider reviewing discretionary expenses.`,
+      });
+    }
+  }
+
+  if (Array.isArray(goals)) {
+    const nearDeadlineGoals = goals.filter((g) => {
+      const daysLeft = (new Date(g.targetDate) - new Date()) / (1000 * 60 * 60 * 24);
+      const progress = (Number(g.savedAmount) / Number(g.targetAmount)) * 100;
+      return daysLeft > 0 && daysLeft <= 60 && progress < 80;
+    });
+
+    for (const g of nearDeadlineGoals.slice(0, 2)) {
+      const daysLeft = Math.ceil((new Date(g.targetDate) - new Date()) / (1000 * 60 * 60 * 24));
+      const remaining = Number(g.targetAmount) - Number(g.savedAmount);
+      insights.push({
+        id: `goal-${g._id}`,
+        type: "warning",
+        title: `Goal deadline approaching: ${g.title}`,
+        message: `${daysLeft} days left. You still need ${formatAmount(remaining)} to reach your target.`,
+      });
+    }
+
+    const completedGoals = goals.filter((g) => Number(g.savedAmount) >= Number(g.targetAmount));
+    if (completedGoals.length > 0) {
+      insights.push({
+        id: "goals-completed",
+        type: "success",
+        title: "Goal achieved!",
+        message: `You've reached ${completedGoals.length} financial goal${completedGoals.length > 1 ? "s" : ""}. Time to set a new one!`,
+      });
+    }
+  }
+
+  return insights;
+}
+
+export function useDashboard() {
+  const [transactions, setTransactions] = useState([]);
+  const [goals, setGoals] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [txRes, goalsRes] = await Promise.all([
+        fetchDashboardTransactions(),
+        fetchDashboardGoals(),
+      ]);
+      if (isMounted.current) {
+        setTransactions(txRes.data?.transactions ?? []);
+        setGoals(goalsRes.data?.goals ?? []);
+      }
+    } catch (err) {
+      if (isMounted.current) setError(err.message);
+    } finally {
+      if (isMounted.current) setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
+
+  const { monthMap, ...stats } = computeDashboardData(transactions);
+  const insights = computeInsights(monthMap, goals);
+  const recentTransactions = transactions.slice(0, 5);
+
+  return { ...stats, goals, recentTransactions, insights, isLoading, error, reload: load };
+}
