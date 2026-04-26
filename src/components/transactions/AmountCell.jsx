@@ -1,4 +1,5 @@
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { formatINR } from "../../utils/formatINR";
 
 const AMOUNT_CONFIG = {
   income: {
@@ -19,9 +20,8 @@ export function AmountCell({ type, amount }) {
   return (
     <div className="flex items-center justify-end gap-1">
       <Icon className={`h-4 w-4 ${config.iconClass}`} />
-      <span className={config.amountClass}>
-        ${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-      </span>
+      <span className={config.amountClass}>{formatINR(amount)}</span>
     </div>
   );
 }
+

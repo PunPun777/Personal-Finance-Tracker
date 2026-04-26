@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "../hooks/useAuth";
+import { ThemeToggle } from "../components/ui/ThemeToggle";
 
 const NAV_LINKS = [
   { name: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -144,7 +145,8 @@ function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <div className="hidden md:block">
               <NavActions />
             </div>
@@ -165,10 +167,10 @@ function Navbar() {
                       </div>
                       <span className="font-bold text-lg">FinTrack</span>
                     </Link>
-                    <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
                       <NavItems location={location} />
                     </div>
-                    <div className="mt-auto px-2">
+                    <div className="mt-auto px-2 flex flex-col gap-2">
                       <NavActions />
                     </div>
                   </div>

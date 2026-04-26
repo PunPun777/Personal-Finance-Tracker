@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { computeGoalProgress } from "../../hooks/useGoals";
+import { formatINR } from "../../utils/formatINR";
 
 const STATUS_CONFIG = {
   "at-risk": {
@@ -91,13 +92,13 @@ export default function GoalCard({ goal, onEdit, onDelete }) {
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Saved</p>
             <p className="text-2xl font-bold tracking-tight text-foreground">
-              ${Number(goal.savedAmount).toLocaleString()}
+              {formatINR(goal.savedAmount)}
             </p>
           </div>
           <div className="text-right space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Target</p>
             <p className="text-lg font-semibold text-foreground">
-              ${Number(goal.targetAmount).toLocaleString()}
+              {formatINR(goal.targetAmount)}
             </p>
           </div>
         </div>
@@ -123,7 +124,7 @@ export default function GoalCard({ goal, onEdit, onDelete }) {
           ) : (
             <span className="font-medium text-muted-foreground flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              <strong className="text-foreground">${remaining.toLocaleString()}</strong>
+              <strong className="text-foreground">{formatINR(remaining)}</strong>
               left to save
             </span>
           )}
