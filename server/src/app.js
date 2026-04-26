@@ -13,6 +13,7 @@ import ApiError from "./utils/ApiError.js";
 import authRoutes from "./routes/authRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import goalRoutes from "./routes/goalRoutes.js";
+import budgetRoutes from "./routes/budgetRoutes.js";
 
 await connectDB();
 
@@ -61,6 +62,7 @@ if (process.env.NODE_ENV === "development") {
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/goals", goalRoutes);
+app.use("/api/budgets", budgetRoutes);
 
 app.all("*", (req, _res, next) => {
   next(
