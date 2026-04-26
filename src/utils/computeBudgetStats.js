@@ -1,12 +1,4 @@
-/**
- * computeBudgetStats — pure function, no React, fully testable.
- *
- * @param {Array} budgets   - Budget documents from the database
- * @param {Array} transactions - All transactions fetched for the current month
- * @returns {Array} Enriched budget objects with computed stats
- */
-
-const OVERALL_CATEGORY = "Overall Monthly";
+import { OVERALL_BUDGET_CATEGORY } from "../constants/budgetCategories";
 
 /**
  * Returns { year, month } for the current calendar month.
@@ -55,7 +47,7 @@ export function computeSingleBudgetStats(budget, spendMap, totalMonthlySpend) {
   const limit = Number(budget.limit) || 0;
 
   const spent =
-    budget.category === OVERALL_CATEGORY
+    budget.category === OVERALL_BUDGET_CATEGORY
       ? totalMonthlySpend
       : spendMap[budget.category] || 0;
 

@@ -18,38 +18,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import BudgetCard from "../components/budgeting/BudgetCard";
+import BudgetCard, { BudgetCardSkeleton } from "../components/budgeting/BudgetCard";
 import BudgetForm from "../components/budgeting/BudgetForm";
 import { useBudgets } from "../hooks/useBudgets";
 import { ErrorBanner, FeedbackBanner } from "../components/ui/Banners";
 
-function BudgetCardSkeleton() {
-  return (
-    <div className="rounded-xl border bg-card p-6 space-y-4 animate-pulse">
-      <div className="flex justify-between items-start">
-        <div className="space-y-2">
-          <div className="h-5 w-32 bg-muted rounded" />
-          <div className="h-3 w-44 bg-muted rounded" />
-        </div>
-        <div className="flex gap-1">
-          <div className="h-8 w-8 bg-muted rounded" />
-          <div className="h-8 w-8 bg-muted rounded" />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <div className="h-3 w-16 bg-muted rounded" />
-          <div className="h-3 w-10 bg-muted rounded" />
-        </div>
-        <div className="h-2 w-full bg-muted rounded-full" />
-      </div>
-      <div className="flex justify-between pt-2 border-t">
-        <div className="h-3 w-20 bg-muted rounded" />
-        <div className="h-3 w-20 bg-muted rounded" />
-      </div>
-    </div>
-  );
-}
 
 export default function Budgets() {
   const { budgets, isLoading, isSubmitting, error, create, update, remove, reload } =

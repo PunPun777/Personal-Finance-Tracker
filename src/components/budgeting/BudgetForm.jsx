@@ -11,36 +11,34 @@ import {
 } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
 import { TRANSACTION_CATEGORIES } from "../../constants/transactionCategories";
+import { OVERALL_BUDGET_CATEGORY } from "../../constants/budgetCategories";
 
-const BUDGET_CATEGORIES = ["Overall Monthly", ...TRANSACTION_CATEGORIES];
+const BUDGET_CATEGORIES = [OVERALL_BUDGET_CATEGORY, ...TRANSACTION_CATEGORIES];
+
+const EMPTY_FORM = { category: "", limit: "" };
 
 export default function BudgetForm({ initialData, onSubmit, onCancel, isSubmitting }) {
-  const [formData, setFormData] = useState({
-    category: "",
-    limit: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [categoryError, setCategoryError] = useState("");
 
   useEffect(() => {
-    if (initialData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        category: initialData.category || "",
-        limit: initialData.limit || "",
-      });
-    } else {
-      setFormData({
-        category: "",
-        limit: "",
-      });
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFormData(
+      initialData
+        ? { category: initialData.category ?? "", limit: initialData.limit ?? "" }
+        : EMPTY_FORM
+    );
+    setCategoryError("");
   }, [initialData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      limit: Number(formData.limit),
-    });
+    if (!formData.category) {
+      setCategoryError("Please select a category.");
+      return;
+    }
+    setCategoryError("");
+    onSubmit({ ...formData, limit: Number(formData.limit) });
   };
 
   return (
@@ -49,11 +47,13 @@ export default function BudgetForm({ initialData, onSubmit, onCancel, isSubmitti
         <Label htmlFor="budget-category">Budget Category</Label>
         <Select
           value={formData.category}
-          onValueChange={(val) => setFormData({ ...formData, category: val })}
-          required
-          disabled={!!initialData} // Usually you don't change the category of an existing budget
+          onValueChange={(val) => {
+            setFormData({ ...formData, category: val });
+            setCategoryError("");
+          }}
+          disabled={!!initialData}
         >
-          <SelectTrigger id="budget-category">
+          <SelectTrigger id="budget-category" className={categoryError ? "border-destructive" : ""}>
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
@@ -64,16 +64,19 @@ export default function BudgetForm({ initialData, onSubmit, onCancel, isSubmitti
             ))}
           </SelectContent>
         </Select>
+        {categoryError && (
+          <p className="text-xs text-destructive">{categoryError}</p>
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="budget-limit">Monthly Limit</Label>
+        <Label htmlFor="budget-limit">Monthly Limit (₹)</Label>
         <Input
           id="budget-limit"
           type="number"
           step="0.01"
           min="1"
-          placeholder="e.g., 500"
+          placeholder="e.g., 5000"
           value={formData.limit}
           onChange={(e) => setFormData({ ...formData, limit: e.target.value })}
           required

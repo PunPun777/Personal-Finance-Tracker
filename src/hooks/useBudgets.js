@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   fetchBudgets,
   createBudget,
@@ -87,8 +87,12 @@ export function useBudgets() {
     }
   }, [load]);
 
-  // Derived: merge budgets with computed spend stats from transactions
-  const enrichedBudgets = computeBudgetStats(budgets, transactions);
+  // Derived: merge budgets with computed spend stats from transactions.
+  // Memoized so computeBudgetStats only reruns when the source data changes.
+  const enrichedBudgets = useMemo(
+    () => computeBudgetStats(budgets, transactions),
+    [budgets, transactions]
+  );
 
   return {
     budgets: enrichedBudgets,
