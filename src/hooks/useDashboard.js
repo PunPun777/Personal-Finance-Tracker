@@ -22,26 +22,21 @@ export function computeDashboardData(transactions) {
 
     if (t.type === "income") {
       totalIncome += amount;
-    } else {
-      totalExpenses += amount;
-
-      if (t.category) {
-        categoryMap[t.category] = (categoryMap[t.category] || 0) + amount;
-      }
-
-      const mk = buildMonthKey(t.date);
-      if (!monthMap[mk]) {
-        monthMap[mk] = { name: getShortMonth(t.date), income: 0, expenses: 0, _key: mk };
-      }
-      monthMap[mk].expenses += amount;
-    }
-
-    if (t.type === "income") {
       const mk = buildMonthKey(t.date);
       if (!monthMap[mk]) {
         monthMap[mk] = { name: getShortMonth(t.date), income: 0, expenses: 0, _key: mk };
       }
       monthMap[mk].income += amount;
+    } else {
+      totalExpenses += amount;
+      if (t.category) {
+        categoryMap[t.category] = (categoryMap[t.category] || 0) + amount;
+      }
+      const mk = buildMonthKey(t.date);
+      if (!monthMap[mk]) {
+        monthMap[mk] = { name: getShortMonth(t.date), income: 0, expenses: 0, _key: mk };
+      }
+      monthMap[mk].expenses += amount;
     }
   }
 
@@ -70,7 +65,116 @@ export function computeDashboardData(transactions) {
 
   const savings = totalIncome - totalExpenses;
 
-  return { totalIncome, totalExpenses, savings, categorySpending, monthlyData };
+  return { totalIncome, totalExpenses, savings, categorySpending, monthlyData, monthMap };
+}
+
+export function computeInsights(monthMap, goals) {
+  const insights = [];
+  const months = Object.values(monthMap).sort((a, b) => a._key.localeCompare(b._key));
+
+  if (months.length >= 2) {
+    const prev = months[months.length - 2];
+    const curr = months[months.length - 1];
+
+    if (prev.expenses > 0) {
+      const expenseDiff = curr.expenses - prev.expenses;
+      const expensePct = Math.abs((expenseDiff / prev.expenses) * 100).toFixed(0);
+      if (expenseDiff > 0) {
+        insights.push({
+          id: "expense-up",
+          type: "warning",
+          title: "Spending increased",
+          message: `You spent ${expensePct}% more this month compared to last month.`,
+        });
+      } else if (expenseDiff < 0) {
+        insights.push({
+          id: "expense-down",
+          type: "success",
+          title: "Spending reduced",
+          message: `You spent ${expensePct}% less this month compared to last month. Great discipline!`,
+        });
+      }
+    }
+
+    if (prev.income > 0) {
+      const incomeDiff = curr.income - prev.income;
+      const incomePct = Math.abs((incomeDiff / prev.income) * 100).toFixed(0);
+      if (incomeDiff > 0) {
+        insights.push({
+          id: "income-up",
+          type: "success",
+          title: "Income grew",
+          message: `Your income increased by ${incomePct}% compared to last month.`,
+        });
+      } else if (incomeDiff < 0) {
+        insights.push({
+          id: "income-down",
+          type: "warning",
+          title: "Income dropped",
+          message: `Your income decreased by ${incomePct}% compared to last month.`,
+        });
+      }
+    }
+
+    const prevSavings = prev.income - prev.expenses;
+    const currSavings = curr.income - curr.expenses;
+    if (prevSavings < currSavings && currSavings > 0) {
+      insights.push({
+        id: "savings-up",
+        type: "success",
+        title: "Savings improved",
+        message: `Your net savings increased this month. You saved $${currSavings.toFixed(2)}.`,
+      });
+    } else if (currSavings < 0) {
+      insights.push({
+        id: "savings-deficit",
+        type: "danger",
+        title: "Spending exceeds income",
+        message: `Your expenses exceeded your income by $${Math.abs(currSavings).toFixed(2)} this month.`,
+      });
+    }
+
+    const expenseToIncomeRatio = curr.income > 0 ? (curr.expenses / curr.income) * 100 : 0;
+    if (expenseToIncomeRatio > 80 && expenseToIncomeRatio <= 100) {
+      insights.push({
+        id: "high-ratio",
+        type: "warning",
+        title: "High expense ratio",
+        message: `You're spending ${expenseToIncomeRatio.toFixed(0)}% of your income. Consider reviewing discretionary expenses.`,
+      });
+    }
+  }
+
+  if (Array.isArray(goals)) {
+    const nearDeadlineGoals = goals.filter((g) => {
+      const daysLeft = (new Date(g.targetDate) - new Date()) / (1000 * 60 * 60 * 24);
+      const progress = (Number(g.savedAmount) / Number(g.targetAmount)) * 100;
+      return daysLeft > 0 && daysLeft <= 60 && progress < 80;
+    });
+
+    for (const g of nearDeadlineGoals.slice(0, 2)) {
+      const daysLeft = Math.ceil((new Date(g.targetDate) - new Date()) / (1000 * 60 * 60 * 24));
+      const remaining = Number(g.targetAmount) - Number(g.savedAmount);
+      insights.push({
+        id: `goal-${g._id}`,
+        type: "warning",
+        title: `Goal deadline approaching: ${g.title}`,
+        message: `${daysLeft} days left. You still need $${remaining.toFixed(2)} to reach your target.`,
+      });
+    }
+
+    const completedGoals = goals.filter((g) => Number(g.savedAmount) >= Number(g.targetAmount));
+    if (completedGoals.length > 0) {
+      insights.push({
+        id: "goals-completed",
+        type: "success",
+        title: "Goal achieved!",
+        message: `You've reached ${completedGoals.length} financial goal${completedGoals.length > 1 ? "s" : ""}. Time to set a new one!`,
+      });
+    }
+  }
+
+  return insights;
 }
 
 export function useDashboard() {
@@ -109,8 +213,9 @@ export function useDashboard() {
     load();
   }, [load]);
 
-  const stats = computeDashboardData(transactions);
+  const { monthMap, ...stats } = computeDashboardData(transactions);
+  const insights = computeInsights(monthMap, goals);
   const recentTransactions = transactions.slice(0, 5);
 
-  return { ...stats, goals, recentTransactions, isLoading, error, reload: load };
+  return { ...stats, goals, recentTransactions, insights, isLoading, error, reload: load };
 }

@@ -31,6 +31,7 @@ import {
   Legend,
 } from "recharts";
 import SummaryCard from "../components/dashboard/SummaryCard";
+import InsightCard from "../components/dashboard/InsightCard";
 import { useDashboard } from "../hooks/useDashboard";
 
 const CHART_TOOLTIP_STYLE = {
@@ -58,6 +59,7 @@ export default function Dashboard() {
     categorySpending,
     monthlyData,
     recentTransactions,
+    insights,
     isLoading,
     error,
     reload,
@@ -104,6 +106,27 @@ export default function Dashboard() {
           description={savings >= 0 ? "positive balance" : "deficit"}
         />
       </div>
+
+      {isLoading ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-lg border p-4 space-y-2">
+              <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+              <div className="h-3 w-full bg-muted rounded animate-pulse" />
+              <div className="h-3 w-3/4 bg-muted rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      ) : insights.length > 0 ? (
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight mb-3">Financial Insights</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {insights.map((insight) => (
+              <InsightCard key={insight.id} insight={insight} />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="md:col-span-1 lg:col-span-4">
