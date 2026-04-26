@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Plus, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,41 +8,64 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import BudgetCard from "../components/budgeting/BudgetCard";
 import BudgetForm from "../components/budgeting/BudgetForm";
+import { useBudgets } from "../hooks/useBudgets";
+import { ErrorBanner, FeedbackBanner } from "../components/ui/Banners";
 
-// Temporary Mock Data for UI presentation
-const MOCK_BUDGETS = [
-  {
-    _id: "b1",
-    category: "Overall Monthly",
-    limit: 4000,
-    spent: 2850,
-  },
-  {
-    _id: "b2",
-    category: "Food & Dining",
-    limit: 800,
-    spent: 850, // Over budget mock
-  },
-  {
-    _id: "b3",
-    category: "Transportation",
-    limit: 400,
-    spent: 320, // Warning mock (80%)
-  },
-  {
-    _id: "b4",
-    category: "Entertainment",
-    limit: 200,
-    spent: 45, // Safe mock
-  },
-];
+function BudgetCardSkeleton() {
+  return (
+    <div className="rounded-xl border bg-card p-6 space-y-4 animate-pulse">
+      <div className="flex justify-between items-start">
+        <div className="space-y-2">
+          <div className="h-5 w-32 bg-muted rounded" />
+          <div className="h-3 w-44 bg-muted rounded" />
+        </div>
+        <div className="flex gap-1">
+          <div className="h-8 w-8 bg-muted rounded" />
+          <div className="h-8 w-8 bg-muted rounded" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="flex justify-between">
+          <div className="h-3 w-16 bg-muted rounded" />
+          <div className="h-3 w-10 bg-muted rounded" />
+        </div>
+        <div className="h-2 w-full bg-muted rounded-full" />
+      </div>
+      <div className="flex justify-between pt-2 border-t">
+        <div className="h-3 w-20 bg-muted rounded" />
+        <div className="h-3 w-20 bg-muted rounded" />
+      </div>
+    </div>
+  );
+}
 
 export default function Budgets() {
-  const [budgets, setBudgets] = useState(MOCK_BUDGETS);
+  const { budgets, isLoading, isSubmitting, error, create, update, remove, reload } =
+    useBudgets();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const feedbackTimer = useRef(null);
+
+  const showFeedback = useCallback((message, type = "error") => {
+    clearTimeout(feedbackTimer.current);
+    setFeedback({ message, type });
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 4000);
+  }, []);
 
   const handleOpenAdd = () => {
     setEditingBudget(null);
@@ -54,29 +77,28 @@ export default function Budgets() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id) => {
-    setBudgets((prev) => prev.filter((b) => b._id !== id));
+  const handleConfirmDelete = async () => {
+    if (!deletingId) return;
+    const result = await remove(deletingId);
+    setDeletingId(null);
+    if (!result.success) showFeedback(result.message);
+    else showFeedback("Budget deleted.", "success");
   };
 
-  const handleSubmit = (formData) => {
-    if (editingBudget) {
-      setBudgets((prev) =>
-        prev.map((b) =>
-          b._id === editingBudget._id ? { ...b, limit: formData.limit } : b
-        )
+  const handleSubmit = async (formData) => {
+    const result = editingBudget
+      ? await update(editingBudget._id, formData)
+      : await create(formData);
+
+    if (result.success) {
+      setIsDialogOpen(false);
+      showFeedback(
+        editingBudget ? "Budget updated." : "Budget created.",
+        "success"
       );
     } else {
-      setBudgets((prev) => [
-        ...prev,
-        {
-          _id: Math.random().toString(36).substring(7),
-          category: formData.category,
-          limit: formData.limit,
-          spent: 0, // Fresh budgets have 0 spent initially
-        },
-      ]);
+      showFeedback(result.message);
     }
-    setIsDialogOpen(false);
   };
 
   return (
@@ -94,10 +116,19 @@ export default function Budgets() {
         </Button>
       </div>
 
-      {budgets.length === 0 ? (
+      <FeedbackBanner feedback={feedback} />
+      <ErrorBanner message={!isLoading ? error : null} onRetry={reload} />
+
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <BudgetCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : budgets.length === 0 ? (
         <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg py-16 px-4 text-center">
           <div className="rounded-full bg-muted p-4 mb-4">
-            <Plus className="h-6 w-6 text-muted-foreground" />
+            <Wallet className="h-6 w-6 text-muted-foreground" />
           </div>
           <h3 className="text-lg font-semibold mb-1">No budgets yet</h3>
           <p className="text-sm text-muted-foreground max-w-sm mb-4">
@@ -112,13 +143,16 @@ export default function Budgets() {
               key={budget._id}
               budget={budget}
               onEdit={handleOpenEdit}
-              onDelete={handleDelete}
+              onDelete={setDeletingId}
             />
           ))}
         </div>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => { if (!isSubmitting) setIsDialogOpen(open); }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
@@ -134,10 +168,30 @@ export default function Budgets() {
             initialData={editingBudget}
             onSubmit={handleSubmit}
             onCancel={() => setIsDialogOpen(false)}
-            isSubmitting={false}
+            isSubmitting={isSubmitting}
           />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete budget?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The budget limit will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
