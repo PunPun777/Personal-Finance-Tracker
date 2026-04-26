@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchDashboardTransactions, fetchDashboardGoals } from "../services/dashboardService";
 import { CATEGORY_COLORS } from "../constants/chartColors";
+import { formatINR } from "../utils/formatINR";
 
 function buildMonthKey(dateStr) {
   const d = new Date(dateStr);
@@ -11,12 +12,6 @@ function getShortMonth(dateStr) {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 }
 
-function formatAmount(value) {
-  return `$${Number(value).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
 
 export function computeDashboardData(transactions) {
   let totalIncome = 0;
@@ -126,14 +121,14 @@ export function computeInsights(monthMap, goals) {
         id: "savings-up",
         type: "success",
         title: "Savings improved",
-        message: `Your net savings increased this month. You saved ${formatAmount(currSavings)}.`,
+        message: `Your net savings increased this month. You saved ${formatINR(currSavings)}.`,
       });
     } else if (currSavings < 0) {
       insights.push({
         id: "savings-deficit",
         type: "danger",
         title: "Spending exceeds income",
-        message: `Your expenses exceeded your income by ${formatAmount(Math.abs(currSavings))} this month.`,
+        message: `Your expenses exceeded your income by ${formatINR(Math.abs(currSavings))} this month.`,
       });
     }
 
@@ -162,7 +157,7 @@ export function computeInsights(monthMap, goals) {
         id: `goal-${g._id}`,
         type: "warning",
         title: `Goal deadline approaching: ${g.title}`,
-        message: `${daysLeft} days left. You still need ${formatAmount(remaining)} to reach your target.`,
+        message: `${daysLeft} days left. You still need ${formatINR(remaining)} to reach your target.`,
       });
     }
 

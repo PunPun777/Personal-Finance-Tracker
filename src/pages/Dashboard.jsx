@@ -43,6 +43,7 @@ import { EmptyChart } from "../components/dashboard/EmptyChart";
 import { ErrorBanner } from "../components/ui/Banners";
 import { AmountCell } from "../components/transactions/AmountCell";
 import { useDashboard } from "../hooks/useDashboard";
+import { formatINR, formatINRCompact } from "../utils/formatINR";
 
 const CHART_TOOLTIP_STYLE = {
   contentStyle: {
@@ -57,12 +58,6 @@ function ChartSkeleton() {
   return <div className="h-[300px] w-full bg-muted rounded-md animate-pulse" />;
 }
 
-function formatCurrency(value) {
-  return `$${Number(value).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
 
 function RecentTransactionsSkeleton() {
   return (
@@ -117,19 +112,19 @@ export default function Dashboard() {
           <>
             <SummaryCard
               title="Total Income"
-              amount={formatCurrency(totalIncome)}
+              amount={formatINR(totalIncome)}
               icon={DollarSign}
               description="all time"
             />
             <SummaryCard
               title="Total Expenses"
-              amount={formatCurrency(totalExpenses)}
+              amount={formatINR(totalExpenses)}
               icon={CreditCard}
               description="all time"
             />
             <SummaryCard
               title="Net Savings"
-              amount={formatCurrency(Math.abs(savings))}
+              amount={formatINR(Math.abs(savings))}
               icon={PiggyBank}
               trend={savings >= 0 ? "up" : "down"}
               description={savings >= 0 ? "positive balance" : "deficit"}
@@ -184,8 +179,8 @@ export default function Dashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} padding={{ left: 10, right: 10 }} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
-                    <Tooltip formatter={(v) => formatCurrency(v)} {...CHART_TOOLTIP_STYLE} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={formatINRCompact} />
+                    <Tooltip formatter={(v) => formatINR(v)} {...CHART_TOOLTIP_STYLE} />
                     <Area type="monotone" dataKey="income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
                     <Area type="monotone" dataKey="expenses" stroke="#f43f5e" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={2} />
                   </AreaChart>
@@ -226,7 +221,7 @@ export default function Dashboard() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v) => formatCurrency(v)} {...CHART_TOOLTIP_STYLE} />
+                    <Tooltip formatter={(v) => formatINR(v)} {...CHART_TOOLTIP_STYLE} />
                     <Legend verticalAlign="bottom" height={36} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -258,8 +253,8 @@ export default function Dashboard() {
                   <BarChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
-                    <Tooltip cursor={{ fill: "hsl(var(--muted))" }} formatter={(v) => formatCurrency(v)} {...CHART_TOOLTIP_STYLE} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={formatINRCompact} />
+                    <Tooltip cursor={{ fill: "hsl(var(--muted))" }} formatter={(v) => formatINR(v)} {...CHART_TOOLTIP_STYLE} />
                     <Bar dataKey="expenses" fill="#f43f5e" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

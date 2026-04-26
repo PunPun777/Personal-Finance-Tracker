@@ -8,14 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-
-function formatCurrency(value) {
-  return `$${Number(value).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
+import { formatINR } from "../../utils/formatINR";
 const STATUS_CONFIG = {
   safe: {
     indicator: "",
@@ -58,7 +51,7 @@ export default function BudgetCard({ budget, onEdit, onDelete }) {
             )}
           </div>
           <CardDescription>
-            {formatCurrency(spent)} of {formatCurrency(limit)} spent this month
+            {formatINR(spent)} of {formatINR(limit)} spent this month
           </CardDescription>
         </div>
         <div className="flex gap-1 shrink-0 ml-2">
@@ -104,7 +97,7 @@ export default function BudgetCard({ budget, onEdit, onDelete }) {
             {isOver ? "Over by" : "Remaining"}
           </span>
           <span className={`font-semibold ${config.remainingClass}`}>
-            {formatCurrency(Math.abs(remaining))}
+            {formatINR(Math.abs(remaining))}
           </span>
         </div>
       </CardContent>
