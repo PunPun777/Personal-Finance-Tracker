@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchDashboardTransactions, fetchDashboardGoals } from "../services/dashboardService";
+import { CATEGORY_COLORS } from "../constants/chartColors";
 
 function buildMonthKey(dateStr) {
   const d = new Date(dateStr);
@@ -8,6 +9,13 @@ function buildMonthKey(dateStr) {
 
 function getShortMonth(dateStr) {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+}
+
+function formatAmount(value) {
+  return `$${Number(value).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export function computeDashboardData(transactions) {
@@ -39,11 +47,6 @@ export function computeDashboardData(transactions) {
       monthMap[mk].expenses += amount;
     }
   }
-
-  const CATEGORY_COLORS = [
-    "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6",
-    "#ec4899", "#f43f5e", "#14b8a6", "#f97316",
-  ];
 
   const categorySpending = Object.entries(categoryMap)
     .sort((a, b) => b[1] - a[1])
@@ -123,14 +126,14 @@ export function computeInsights(monthMap, goals) {
         id: "savings-up",
         type: "success",
         title: "Savings improved",
-        message: `Your net savings increased this month. You saved $${currSavings.toFixed(2)}.`,
+        message: `Your net savings increased this month. You saved ${formatAmount(currSavings)}.`,
       });
     } else if (currSavings < 0) {
       insights.push({
         id: "savings-deficit",
         type: "danger",
         title: "Spending exceeds income",
-        message: `Your expenses exceeded your income by $${Math.abs(currSavings).toFixed(2)} this month.`,
+        message: `Your expenses exceeded your income by ${formatAmount(Math.abs(currSavings))} this month.`,
       });
     }
 
@@ -159,7 +162,7 @@ export function computeInsights(monthMap, goals) {
         id: `goal-${g._id}`,
         type: "warning",
         title: `Goal deadline approaching: ${g.title}`,
-        message: `${daysLeft} days left. You still need $${remaining.toFixed(2)} to reach your target.`,
+        message: `${daysLeft} days left. You still need ${formatAmount(remaining)} to reach your target.`,
       });
     }
 

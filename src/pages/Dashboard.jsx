@@ -2,10 +2,6 @@ import {
   DollarSign,
   CreditCard,
   PiggyBank,
-  ArrowUpRight,
-  ArrowDownRight,
-  AlertCircle,
-  RefreshCw,
   LineChart as LineChartIcon,
   PieChart as PieChartIcon,
   BarChart3,
@@ -26,7 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -43,7 +38,10 @@ import {
   Legend,
 } from "recharts";
 import SummaryCard, { SummaryCardSkeleton } from "../components/dashboard/SummaryCard";
-import InsightCard from "../components/dashboard/InsightCard";
+import InsightCard, { InsightsSkeleton } from "../components/dashboard/InsightCard";
+import { EmptyChart } from "../components/dashboard/EmptyChart";
+import { ErrorBanner } from "../components/ui/Banners";
+import { AmountCell } from "../components/transactions/AmountCell";
 import { useDashboard } from "../hooks/useDashboard";
 
 const CHART_TOOLTIP_STYLE = {
@@ -64,6 +62,22 @@ function formatCurrency(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+function RecentTransactionsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex justify-between items-center">
+          <div className="space-y-1.5">
+            <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function Dashboard() {
@@ -89,20 +103,9 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {error && (
-        <div className="flex items-center justify-between gap-4 rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-destructive font-medium">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
-          </div>
-          <Button variant="outline" size="sm" onClick={reload} className="gap-2 shrink-0">
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </Button>
-        </div>
-      )}
+      <ErrorBanner message={error} onRetry={reload} />
 
-      {/* Summary Cards Row */}
+      {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           <>
@@ -135,17 +138,9 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Insights Row */}
+      {/* Financial Insights */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-lg border p-4 space-y-2">
-              <div className="h-4 w-32 bg-muted rounded animate-pulse" />
-              <div className="h-3 w-full bg-muted rounded animate-pulse" />
-              <div className="h-3 w-3/4 bg-muted rounded animate-pulse" />
-            </div>
-          ))}
-        </div>
+        <InsightsSkeleton />
       ) : insights.length > 0 ? (
         <div>
           <h2 className="text-lg font-semibold tracking-tight mb-4">Financial Insights</h2>
@@ -157,7 +152,7 @@ export default function Dashboard() {
         </div>
       ) : null}
 
-      {/* Top Charts Row */}
+      {/* Cash Flow + Category Spending */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -168,11 +163,11 @@ export default function Dashboard() {
             {isLoading ? (
               <ChartSkeleton />
             ) : monthlyData.length === 0 ? (
-              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg m-2">
-                <LineChartIcon className="h-10 w-10 mb-4 text-muted/50" />
-                <p className="text-sm font-medium text-foreground">No cash flow data</p>
-                <p className="text-xs mt-1">Add transactions to see your history.</p>
-              </div>
+              <EmptyChart
+                icon={LineChartIcon}
+                title="No cash flow data"
+                description="Add transactions to see your history."
+              />
             ) : (
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -209,11 +204,11 @@ export default function Dashboard() {
             {isLoading ? (
               <ChartSkeleton />
             ) : categorySpending.length === 0 ? (
-              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
-                <PieChartIcon className="h-10 w-10 mb-4 text-muted/50" />
-                <p className="text-sm font-medium text-foreground">No expense data</p>
-                <p className="text-xs mt-1">Add expenses to see categories.</p>
-              </div>
+              <EmptyChart
+                icon={PieChartIcon}
+                title="No expense data"
+                description="Add expenses to see categories."
+              />
             ) : (
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -241,7 +236,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Bottom Charts Row */}
+      {/* Monthly Expenses + Recent Transactions */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -252,11 +247,11 @@ export default function Dashboard() {
             {isLoading ? (
               <ChartSkeleton />
             ) : monthlyData.length === 0 ? (
-              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg m-2">
-                <BarChart3 className="h-10 w-10 mb-4 text-muted/50" />
-                <p className="text-sm font-medium text-foreground">No monthly expenses</p>
-                <p className="text-xs mt-1">Add expenses to see your trends.</p>
-              </div>
+              <EmptyChart
+                icon={BarChart3}
+                title="No monthly expenses"
+                description="Add expenses to see your trends."
+              />
             ) : (
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -280,23 +275,13 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex justify-between items-center">
-                    <div className="space-y-1.5">
-                      <div className="h-4 w-32 bg-muted rounded animate-pulse" />
-                      <div className="h-3 w-24 bg-muted rounded animate-pulse" />
-                    </div>
-                    <div className="h-4 w-16 bg-muted rounded animate-pulse" />
-                  </div>
-                ))}
-              </div>
+              <RecentTransactionsSkeleton />
             ) : recentTransactions.length === 0 ? (
-              <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg">
-                <Receipt className="h-10 w-10 mb-4 text-muted/50" />
-                <p className="text-sm font-medium text-foreground">No transactions yet</p>
-                <p className="text-xs mt-1">Your recent activity will appear here.</p>
-              </div>
+              <EmptyChart
+                icon={Receipt}
+                title="No transactions yet"
+                description="Your recent activity will appear here."
+              />
             ) : (
               <div className="overflow-auto">
                 <Table>
@@ -311,21 +296,12 @@ export default function Dashboard() {
                       <TableRow key={t._id}>
                         <TableCell>
                           <div className="font-medium">{t.description || t.category}</div>
-                          <div className="text-xs text-muted-foreground hidden sm:block">
+                          <div className="text-xs text-muted-foreground mt-0.5">
                             {t.category} • {new Date(t.date).toLocaleDateString()}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {t.type === "income" ? (
-                              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                            ) : (
-                              <ArrowDownRight className="h-4 w-4 text-rose-500" />
-                            )}
-                            <span className={`font-medium ${t.type === "income" ? "text-emerald-500" : "text-foreground"}`}>
-                              {formatCurrency(t.amount)}
-                            </span>
-                          </div>
+                          <AmountCell type={t.type} amount={t.amount} />
                         </TableCell>
                       </TableRow>
                     ))}
