@@ -71,7 +71,7 @@ export const updateTransaction = async (transactionId, userId, updates) => {
     );
   }
 
-  const allowedFields = ["amount", "type", "category", "description", "date"];
+  const allowedFields = ["amount", "type", "category", "description", "date", "goalId"];
   allowedFields.forEach((field) => {
     if (updates[field] !== undefined) {
       transaction[field] = updates[field];

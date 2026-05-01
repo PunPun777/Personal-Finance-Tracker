@@ -58,6 +58,12 @@ const transactionSchema = new mongoose.Schema(
       required: [true, "Date is required"],
       default: Date.now,
     },
+    goalId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Goal",
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -66,6 +72,7 @@ const transactionSchema = new mongoose.Schema(
 
 transactionSchema.index({ userId: 1, date: -1 });
 transactionSchema.index({ userId: 1, category: 1 });
+transactionSchema.index({ userId: 1, goalId: 1 });
 
 transactionSchema.set("toJSON", {
   transform: (_doc, ret) => {
