@@ -8,9 +8,7 @@ import validate from "../middleware/validationMiddleware.js";
 import protect from "../middleware/authMiddleware.js";
 
 const router = Router();
-
-// All account routes require authentication
-router.use(protect);
+router.use(protect);
 
 router.get("/", accountController.getAccounts);
 router.post("/", createAccountRules, validate, accountController.createAccount);

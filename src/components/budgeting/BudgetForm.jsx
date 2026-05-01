@@ -21,9 +21,7 @@ export default function BudgetForm({ initialData, onSubmit, onCancel, isSubmitti
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [categoryError, setCategoryError] = useState("");
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormData(
+  useEffect(() => {    setFormData(
       initialData
         ? { category: initialData.category ?? "", limit: initialData.limit ?? "" }
         : EMPTY_FORM

@@ -1,20 +1,12 @@
 import Account from "../models/Account.js";
 import ApiError from "../utils/ApiError.js";
-
-/**
- * Return all accounts for a user, sorted by creation date.
- */
-export const getAccounts = async (userId) => {
+export const getAccounts = async (userId) => {
   const accounts = await Account.find({ userId })
     .sort({ createdAt: -1 })
     .lean();
   return { accounts };
 };
-
-/**
- * Return a single account by id — enforces ownership.
- */
-export const getAccountById = async (accountId, userId) => {
+export const getAccountById = async (accountId, userId) => {
   const account = await Account.findOne({ _id: accountId, userId }).lean();
   if (!account) {
     throw new ApiError(
@@ -24,12 +16,7 @@ export const getAccountById = async (accountId, userId) => {
   }
   return account;
 };
-
-/**
- * Create a new account.
- * Throws 409 if the user already has an account with the same name.
- */
-export const createAccount = async (userId, data) => {
+export const createAccount = async (userId, data) => {
   const { name, type, balance, currency } = data;
 
   const existing = await Account.findOne({ userId, name: name.trim() });
@@ -50,13 +37,7 @@ export const createAccount = async (userId, data) => {
 
   return account;
 };
-
-/**
- * Update an existing account.
- * - name, type, balance, currency, isActive are mutable.
- * - Changing name checks for duplicates.
- */
-export const updateAccount = async (accountId, userId, updates) => {
+export const updateAccount = async (accountId, userId, updates) => {
   const account = await Account.findOne({ _id: accountId, userId });
 
   if (!account) {
@@ -65,9 +46,7 @@ export const updateAccount = async (accountId, userId, updates) => {
       404,
     );
   }
-
-  // If renaming, ensure no duplicate name exists for this user
-  if (updates.name !== undefined && updates.name.trim() !== account.name) {
+  if (updates.name !== undefined && updates.name.trim() !== account.name) {
     const duplicate = await Account.findOne({
       userId,
       name: updates.name.trim(),
@@ -94,11 +73,7 @@ export const updateAccount = async (accountId, userId, updates) => {
   await account.save();
   return account;
 };
-
-/**
- * Delete an account by id — enforces ownership.
- */
-export const deleteAccount = async (accountId, userId) => {
+export const deleteAccount = async (accountId, userId) => {
   const account = await Account.findOneAndDelete({ _id: accountId, userId });
 
   if (!account) {

@@ -1,9 +1,7 @@
 import { body } from "express-validator";
 import { TRANSACTION_CATEGORIES } from "../models/Transaction.js";
 import { BILLING_CYCLES } from "../models/Subscription.js";
-
-// ── Create ────────────────────────────────────────────────────────────────────
-
+
 export const createSubscriptionRules = [
   body("name")
     .trim()
@@ -37,9 +35,7 @@ export const createSubscriptionRules = [
     .optional()
     .isLength({ max: 300 }).withMessage("Description cannot exceed 300 characters."),
 ];
-
-// ── Update (all fields optional) ─────────────────────────────────────────────
-
+
 export const updateSubscriptionRules = [
   body("name")
     .optional()

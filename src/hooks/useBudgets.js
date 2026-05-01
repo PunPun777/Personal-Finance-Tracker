@@ -24,9 +24,7 @@ export function useBudgets() {
   const load = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    try {
-      // Fetch budgets and current-month transactions in parallel
-      const [budgetsRes, txRes] = await Promise.all([
+    try {      const [budgetsRes, txRes] = await Promise.all([
         fetchBudgets(),
         fetchTransactions({ limit: 500, sortBy: "date", sortOrder: "desc" }),
       ]);
@@ -41,9 +39,7 @@ export function useBudgets() {
     }
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
+  useEffect(() => {    load();
   }, [load]);
 
   const create = useCallback(async (formData) => {
@@ -87,9 +83,7 @@ export function useBudgets() {
     }
   }, [load]);
 
-  // Derived: merge budgets with computed spend stats from transactions.
-  // Memoized so computeBudgetStats only reruns when the source data changes.
-  const enrichedBudgets = useMemo(
+    const enrichedBudgets = useMemo(
     () => computeBudgetStats(budgets, transactions),
     [budgets, transactions]
   );

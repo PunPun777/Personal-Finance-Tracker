@@ -8,9 +8,7 @@ import validate from "../middleware/validationMiddleware.js";
 import protect from "../middleware/authMiddleware.js";
 
 const router = Router();
-
-// All subscription routes require authentication
-router.use(protect);
+router.use(protect);
 
 router.get("/", subscriptionController.getSubscriptions);
 router.post("/", createSubscriptionRules, validate, subscriptionController.createSubscription);

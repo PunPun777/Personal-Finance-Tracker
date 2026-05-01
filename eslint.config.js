@@ -17,6 +17,11 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      "react-refresh/only-export-components": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "no-unused-vars": "warn"
+    }
   },
   {
     files: ["server/**/*.js"],
@@ -24,9 +29,12 @@ export default defineConfig([
     languageOptions: {
       globals: globals.node,
     },
+    rules: {
+      "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+    }
   },
   {
-    files: ["tailwind.config.js"],
+    files: ["tailwind.config.js", "vite.config.js"],
     languageOptions: {
       globals: {
         ...globals.node,

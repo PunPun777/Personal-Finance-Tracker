@@ -66,9 +66,7 @@ export function computeDashboardData(transactions) {
 
   return { totalIncome, totalExpenses, savings, categorySpending, monthlyData, monthMap };
 }
-
-// ── Subscription helpers ──────────────────────────────────────────────────────
-
+
 const CYCLE_TO_MONTHLY_FACTOR = {
   daily: 30,
   weekly: 4.33,
@@ -76,25 +74,16 @@ const CYCLE_TO_MONTHLY_FACTOR = {
   quarterly: 1 / 3,
   yearly: 1 / 12,
 };
-
-/** Normalise any subscription amount to its monthly equivalent. */
-export function toMonthlyAmount(subscription) {
+export function toMonthlyAmount(subscription) {
   const factor = CYCLE_TO_MONTHLY_FACTOR[subscription.billingCycle] ?? 1;
   return subscription.amount * factor;
 }
-
-/** Sum of monthly-equivalent costs across all active subscriptions. */
-export function computeMonthlySubscriptionCost(subscriptions) {
+export function computeMonthlySubscriptionCost(subscriptions) {
   return subscriptions
     .filter((s) => s.isActive)
     .reduce((sum, s) => sum + toMonthlyAmount(s), 0);
 }
-
-/**
- * Return active subscriptions due within the next `days` days (includes overdue),
- * sorted by nextBillingDate ascending.
- */
-export function getUpcomingPayments(subscriptions, days = 7) {
+export function getUpcomingPayments(subscriptions, days = 7) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const cutoff = new Date(now);
@@ -108,9 +97,7 @@ export function getUpcomingPayments(subscriptions, days = 7) {
     })
     .sort((a, b) => new Date(a.nextBillingDate) - new Date(b.nextBillingDate));
 }
-
-// ── Insights ──────────────────────────────────────────────────────────────────
-
+
 export function computeInsights(monthMap, goals, subscriptions = []) {
   const insights = [];
   const months = Object.values(monthMap).sort((a, b) => a._key.localeCompare(b._key));
@@ -186,9 +173,7 @@ export function computeInsights(monthMap, goals, subscriptions = []) {
         message: `You're spending ${expenseToIncomeRatio.toFixed(0)}% of your income. Consider reviewing discretionary expenses.`,
       });
     }
-
-    // Subscription cost insight: warn if subscriptions are >30% of income
-    if (subscriptions.length > 0 && curr.income > 0) {
+    if (subscriptions.length > 0 && curr.income > 0) {
       const monthlySubCost = computeMonthlySubscriptionCost(subscriptions);
       const subRatio = (monthlySubCost / curr.income) * 100;
       if (subRatio > 30) {
@@ -233,9 +218,7 @@ export function computeInsights(monthMap, goals, subscriptions = []) {
 
   return insights;
 }
-
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
+
 export function useDashboard() {
   const [transactions, setTransactions] = useState([]);
   const [goals, setGoals] = useState([]);
@@ -270,9 +253,7 @@ export function useDashboard() {
     }
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
+  useEffect(() => {    load();
   }, [load]);
 
   const { monthMap, ...stats } = computeDashboardData(transactions);

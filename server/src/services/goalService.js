@@ -2,18 +2,7 @@ import mongoose from "mongoose";
 import Goal from "../models/Goal.js";
 import Transaction from "../models/Transaction.js";
 import ApiError from "../utils/ApiError.js";
-
-/**
- * Aggregates the total amount of all expense transactions linked to a goal.
- * Goal contributions are recorded as expenses (money leaving your account
- * and being allocated to the goal). This is the canonical source of truth
- * for savedAmount — it is never stored on the Goal document itself.
- *
- * @param {ObjectId|string} goalId
- * @param {ObjectId|string} userId  - guards against cross-user data leakage
- * @returns {Promise<number>}
- */
-async function computeSavedAmount(goalId, userId) {
+async function computeSavedAmount(goalId, userId) {
   const result = await Transaction.aggregate([
     {
       $match: {
@@ -26,21 +15,14 @@ async function computeSavedAmount(goalId, userId) {
   ]);
   return result[0]?.total ?? 0;
 }
-
-/**
- * Enriches a goal document (plain JS object from .lean() or .toJSON())
- * with a real-time savedAmount derived from linked transactions.
- */
-async function enrichGoal(goal, userId) {
+async function enrichGoal(goal, userId) {
   const savedAmount = await computeSavedAmount(goal._id, userId);
   return { ...goal, savedAmount };
 }
 
 export const getGoals = async (userId) => {
   const goals = await Goal.find({ userId }).sort({ createdAt: -1 }).lean();
-
-  // Compute savedAmount for all goals in parallel
-  const enriched = await Promise.all(
+  const enriched = await Promise.all(
     goals.map((g) => enrichGoal(g, userId))
   );
 
@@ -64,9 +46,7 @@ export const createGoal = async (userId, data) => {
     throw new ApiError("Target date must be in the future.", 400);
   }
 
-  const goal = await Goal.create({ ...data, userId, savedAmount: 0 });
-  // Fresh goal always has savedAmount = 0
-  return { ...goal.toJSON(), savedAmount: 0 };
+  const goal = await Goal.create({ ...data, userId, savedAmount: 0 });  return { ...goal.toJSON(), savedAmount: 0 };
 };
 
 export const updateGoal = async (goalId, userId, updates) => {
@@ -81,17 +61,13 @@ export const updateGoal = async (goalId, userId, updates) => {
   if (updates.targetDate && new Date(updates.targetDate) <= new Date()) {
     throw new ApiError("Target date must be in the future.", 400);
   }
-
-  // savedAmount is computed — never accept it from the request body
-  const allowedFields = ["title", "targetAmount", "targetDate", "monthlyContribution", "status"];
+  const allowedFields = ["title", "targetAmount", "targetDate", "monthlyContribution", "status"];
   allowedFields.forEach((field) => {
     if (updates[field] !== undefined) {
       goal[field] = updates[field];
     }
   });
-
-  // Recompute live savedAmount to decide auto-completion
-  const savedAmount = await computeSavedAmount(goalId, userId);
+  const savedAmount = await computeSavedAmount(goalId, userId);
   if (savedAmount >= goal.targetAmount && goal.status === "active") {
     goal.status = "completed";
   }

@@ -26,9 +26,7 @@ function buildFormState(data) {
 export default function GoalForm({ initialData, isSubmitting = false, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(() => buildFormState(initialData));
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormData(buildFormState(initialData));
+  useEffect(() => {    setFormData(buildFormState(initialData));
   }, [initialData]);
 
   const handleSubmit = (e) => {
