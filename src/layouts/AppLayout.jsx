@@ -7,6 +7,7 @@ import {
   Activity,
   PiggyBank,
   CreditCard,
+  Repeat,
   LogOut,
   User,
 } from "lucide-react";
@@ -29,6 +30,7 @@ const NAV_LINKS = [
   { name: "Budgets", path: "/budgets", icon: PiggyBank },
   { name: "Goals", path: "/goals", icon: Target },
   { name: "Accounts", path: "/accounts", icon: CreditCard },
+  { name: "Subscriptions", path: "/subscriptions", icon: Repeat },
 ];
 
 const NavItems = ({ location }) => (

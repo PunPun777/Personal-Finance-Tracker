@@ -298,7 +298,6 @@ export const processDueSubscriptions = async (userId = null) => {
 
       // null → already claimed by a concurrent caller, or no longer due
       if (!sub) {
-        continueLoop = false;
         break;
       }
 
