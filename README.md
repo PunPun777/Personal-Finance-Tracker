@@ -32,10 +32,11 @@ A full-stack finance tracker that:
 | Module | Highlights |
 |---|---|
 | **Authentication** | JWT-based signup/login, secure password hashing (bcrypt), protected routes, guest route redirection |
-| **Transactions** | Full CRUD, 15 categories, optional goal linking, search & filter (date/category/type/description) |
+| **Transactions** | Full CRUD, 15 categories, optional goal and account linking, search & filter (date/category/type/description) |
 | **Dashboard** | Summary cards (income/expense/savings), category pie chart, monthly bar chart, cash flow area chart, recent transactions table, financial insights |
 | **Budgeting** | Per-category budget limits, real-time usage tracking via transaction aggregation, warning/over-budget indicators, progress bars |
 | **Financial Goals** | Goal creation with target amount/date, auto-calculated savedAmount from linked expense transactions, feasibility analysis (on-track/at-risk/not-achievable), progress visualization |
+| **Accounts** | Multiple account types (Wallet, Bank, Credit Card, Savings, Investment), automatic balance updates on transactions via atomic MongoDB sessions, insufficient balance protection |
 | **Dark Mode** | Full light/dark theme toggle with localStorage persistence, smooth transitions |
 | **Design System** | Custom indigo-violet gradient palette, glassmorphism navbar, card accent borders, responsive grid layouts |
 | **INR Formatting** | Indian Rupee (₹) formatting with proper Indian numbering (1,00,000) across all monetary displays |
@@ -45,7 +46,6 @@ A full-stack finance tracker that:
 
 | Module | Description |
 |---|---|
-| **Accounts** | Multiple account support (cash, bank) with balance tracking |
 | **Notifications** | Budget-exceeded alerts, goal deadline reminders, progress notifications |
 | **Goal Insights** | Display required monthly savings, suggest budget adjustments |
 | **AI Integration** | Auto-categorization (NLP), spending prediction, anomaly detection, goal feasibility prediction |
@@ -89,6 +89,7 @@ Backend:   Routes → Controllers → Services → Models → MongoDB
 
 - **Computed, not stored** — Goal `savedAmount` is calculated via MongoDB aggregation from linked transactions, eliminating sync drift
 - **Transaction → Goal linking** — Income allocated to goals is recorded as expense transactions with a `goalId` foreign key
+- **Transaction → Account linking** — Account balances update atomically via MongoDB sessions and `$inc` when transactions are created, updated, or deleted
 - **Category-based budgets** — Budgets are persistent per-category (not per-month), with spend tracking computed from current-month transactions
 - **Optimistic UI** — Deletes are reflected instantly in the UI, with automatic rollback on API failure
 
@@ -108,7 +109,7 @@ Backend:   Routes → Controllers → Services → Models → MongoDB
   /constants            → Category lists, chart colors
 
 /server/src             → Backend (Node + Express)
-  /models               → Mongoose schemas (User, Transaction, Goal, Budget)
+  /models               → Mongoose schemas (User, Transaction, Goal, Budget, Account)
   /controllers          → HTTP request handlers
   /services             → Business logic layer
   /routes               → Express routers
@@ -187,17 +188,15 @@ npm run dev
 
 ## 📌 Status
 
-🟢 **Phase 1: MERN Development** — Core features complete  
-🟡 **Phase 1.5: Accounts Module** — Planned  
+🟢 **Phase 1: MERN Development** — Complete (all modules shipped)  
 ⚪ **Phase 2: AI Integration** — Future
 
 ---
 
 ## 🔮 Future Scope
 
-### Phase 1.5 — Remaining MERN Features
+### Remaining MERN Enhancements
 
-- Accounts module (multi-account support with balance tracking)
 - Notification system (budget alerts, goal reminders)
 - Goal insights (required monthly savings display, adjustment suggestions)
 - TypeScript migration

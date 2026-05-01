@@ -2,11 +2,11 @@
 
 ```
 /server/src
-  /controllers       → authController, transactionController, goalController, budgetController
-  /models            → User, Transaction, Goal, Budget
-  /routes            → authRoutes, transactionRoutes, goalRoutes, budgetRoutes
-  /services          → authService, transactionService, goalService, budgetService
-  /validators        → authValidators, transactionValidators, goalValidators, budgetValidators
+  /controllers       → authController, transactionController, goalController, budgetController, accountController
+  /models            → User, Transaction, Goal, Budget, Account
+  /routes            → authRoutes, transactionRoutes, goalRoutes, budgetRoutes, accountRoutes
+  /services          → authService, transactionService, goalService, budgetService, accountService
+  /validators        → authValidators, transactionValidators, goalValidators, budgetValidators, accountValidators
   /middleware         → authMiddleware, errorHandler, validationMiddleware
   /config            → db.js (MongoDB connection)
   /utils             → ApiError.js, apiResponse.js, jwtUtils.js
