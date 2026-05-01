@@ -24,6 +24,12 @@ Database:
 User → React UI → Custom Hook → Axios Service → Express API → Service Layer → MongoDB
 ```
 
+### Module Integration Flow
+
+```
+Accounts → Subscriptions → Transactions → Goals → Budget → Dashboard
+```
+
 ## 📦 Future Architecture (Phase 2) — 🛠️ Planned
 
 ```
@@ -39,6 +45,7 @@ React → Node API → MongoDB
 - Goal Service (CRUD + computed savedAmount via aggregation)
 - Budget Service (CRUD + duplicate prevention)
 - Account Service (CRUD + duplicate name prevention + balance tracking)
+- Subscription Service (CRUD + recurring transaction processor)
 
 ## 🔐 Security — ✅ Implemented
 

@@ -29,6 +29,15 @@
 - Insufficient balance protection (rejects expenses that would go negative)
 - MongoDB session-based transactions for data consistency
 
+## 🔄 Subscriptions — ✅ Implemented
+
+- Track recurring expenses and bills
+- Set billing cycles (daily, weekly, monthly, quarterly, yearly)
+- Automatic transaction generation on due dates
+- Visual indicators for upcoming and overdue payments
+- Link subscriptions to specific accounts and categories
+- Prevent duplicate transaction creation for the same billing cycle
+
 ## 📊 Dashboard — ✅ Implemented
 
 - Total income/expense/savings summary cards

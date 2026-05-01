@@ -15,6 +15,7 @@ import transactionRoutes from "./routes/transactionRoutes.js";
 import goalRoutes from "./routes/goalRoutes.js";
 import budgetRoutes from "./routes/budgetRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 
 await connectDB();
 
@@ -65,6 +66,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/accounts", accountRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 app.all("*", (req, _res, next) => {
   next(

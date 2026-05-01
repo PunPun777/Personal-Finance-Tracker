@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchDashboardTransactions, fetchDashboardGoals } from "../services/dashboardService";
+import { fetchSubscriptions } from "../services/subscriptionService";
 import { CATEGORY_COLORS } from "../constants/chartColors";
 import { formatINR } from "../utils/formatINR";
 
@@ -66,7 +67,51 @@ export function computeDashboardData(transactions) {
   return { totalIncome, totalExpenses, savings, categorySpending, monthlyData, monthMap };
 }
 
-export function computeInsights(monthMap, goals) {
+// ── Subscription helpers ──────────────────────────────────────────────────────
+
+const CYCLE_TO_MONTHLY_FACTOR = {
+  daily: 30,
+  weekly: 4.33,
+  monthly: 1,
+  quarterly: 1 / 3,
+  yearly: 1 / 12,
+};
+
+/** Normalise any subscription amount to its monthly equivalent. */
+export function toMonthlyAmount(subscription) {
+  const factor = CYCLE_TO_MONTHLY_FACTOR[subscription.billingCycle] ?? 1;
+  return subscription.amount * factor;
+}
+
+/** Sum of monthly-equivalent costs across all active subscriptions. */
+export function computeMonthlySubscriptionCost(subscriptions) {
+  return subscriptions
+    .filter((s) => s.isActive)
+    .reduce((sum, s) => sum + toMonthlyAmount(s), 0);
+}
+
+/**
+ * Return active subscriptions due within the next `days` days (includes overdue),
+ * sorted by nextBillingDate ascending.
+ */
+export function getUpcomingPayments(subscriptions, days = 7) {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() + days);
+
+  return subscriptions
+    .filter((s) => {
+      if (!s.isActive) return false;
+      const d = new Date(s.nextBillingDate);
+      return d <= cutoff;
+    })
+    .sort((a, b) => new Date(a.nextBillingDate) - new Date(b.nextBillingDate));
+}
+
+// ── Insights ──────────────────────────────────────────────────────────────────
+
+export function computeInsights(monthMap, goals, subscriptions = []) {
   const insights = [];
   const months = Object.values(monthMap).sort((a, b) => a._key.localeCompare(b._key));
 
@@ -141,6 +186,20 @@ export function computeInsights(monthMap, goals) {
         message: `You're spending ${expenseToIncomeRatio.toFixed(0)}% of your income. Consider reviewing discretionary expenses.`,
       });
     }
+
+    // Subscription cost insight: warn if subscriptions are >30% of income
+    if (subscriptions.length > 0 && curr.income > 0) {
+      const monthlySubCost = computeMonthlySubscriptionCost(subscriptions);
+      const subRatio = (monthlySubCost / curr.income) * 100;
+      if (subRatio > 30) {
+        insights.push({
+          id: "subscriptions-high",
+          type: "warning",
+          title: "High subscription spend",
+          message: `Subscriptions cost ${formatINR(Math.round(monthlySubCost))}/mo — ${subRatio.toFixed(0)}% of your income. Consider reviewing.`,
+        });
+      }
+    }
   }
 
   if (Array.isArray(goals)) {
@@ -175,9 +234,12 @@ export function computeInsights(monthMap, goals) {
   return insights;
 }
 
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
 export function useDashboard() {
   const [transactions, setTransactions] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const isMounted = useRef(true);
@@ -191,13 +253,15 @@ export function useDashboard() {
     setIsLoading(true);
     setError(null);
     try {
-      const [txRes, goalsRes] = await Promise.all([
+      const [txRes, goalsRes, subsRes] = await Promise.all([
         fetchDashboardTransactions(),
         fetchDashboardGoals(),
+        fetchSubscriptions(),
       ]);
       if (isMounted.current) {
         setTransactions(txRes.data?.transactions ?? []);
         setGoals(goalsRes.data?.goals ?? []);
+        setSubscriptions(subsRes.data?.subscriptions ?? []);
       }
     } catch (err) {
       if (isMounted.current) setError(err.message);
@@ -212,8 +276,21 @@ export function useDashboard() {
   }, [load]);
 
   const { monthMap, ...stats } = computeDashboardData(transactions);
-  const insights = computeInsights(monthMap, goals);
+  const insights = computeInsights(monthMap, goals, subscriptions);
   const recentTransactions = transactions.slice(0, 5);
+  const monthlySubscriptionCost = computeMonthlySubscriptionCost(subscriptions);
+  const upcomingPayments = getUpcomingPayments(subscriptions, 7);
 
-  return { ...stats, goals, recentTransactions, insights, isLoading, error, reload: load };
+  return {
+    ...stats,
+    goals,
+    subscriptions,
+    monthlySubscriptionCost,
+    upcomingPayments,
+    recentTransactions,
+    insights,
+    isLoading,
+    error,
+    reload: load,
+  };
 }

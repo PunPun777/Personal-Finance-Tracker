@@ -37,6 +37,7 @@ A full-stack finance tracker that:
 | **Budgeting** | Per-category budget limits, real-time usage tracking via transaction aggregation, warning/over-budget indicators, progress bars |
 | **Financial Goals** | Goal creation with target amount/date, auto-calculated savedAmount from linked expense transactions, feasibility analysis (on-track/at-risk/not-achievable), progress visualization |
 | **Accounts** | Multiple account types (Wallet, Bank, Credit Card, Savings, Investment), automatic balance updates on transactions via atomic MongoDB sessions, insufficient balance protection |
+| **Subscriptions** | Track recurring expenses and automate monthly transaction generation, with visual indicators for upcoming and overdue payments |
 | **Dark Mode** | Full light/dark theme toggle with localStorage persistence, smooth transitions |
 | **Design System** | Custom indigo-violet gradient palette, glassmorphism navbar, card accent borders, responsive grid layouts |
 | **INR Formatting** | Indian Rupee (₹) formatting with proper Indian numbering (1,00,000) across all monetary displays |
@@ -128,6 +129,7 @@ Backend:   Routes → Controllers → Services → Models → MongoDB
 
 - **Clean Architecture** — Strict separation: Routes → Controllers → Services → Models on backend; Pages → Hooks → Services on frontend
 - **Real-time Computed Data** — Goal progress uses MongoDB `$match + $group` aggregation pipelines, not stale stored values
+- **Automation** — Subscriptions module handles recurring expenses with robust idempotent processing for real-world financial tracking
 - **Production-grade Error Handling** — Custom `ApiError` class, centralized error middleware, consistent `{ success, message, data }` API envelope
 - **Security** — JWT auth, bcrypt hashing, Helmet headers, rate limiting (100 req/15min), input validation on every endpoint, user-scoped data isolation
 - **Modern UX** — Skeleton loaders, optimistic deletes, empty states, feedback banners, dark mode with smooth CSS transitions

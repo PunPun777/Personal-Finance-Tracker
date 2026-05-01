@@ -6,6 +6,9 @@ import {
   PieChart as PieChartIcon,
   BarChart3,
   Receipt,
+  Repeat,
+  CalendarClock,
+  AlertCircle,
 } from "lucide-react";
 import {
   Card,
@@ -84,6 +87,8 @@ export default function Dashboard() {
     monthlyData,
     recentTransactions,
     insights,
+    monthlySubscriptionCost,
+    upcomingPayments,
     isLoading,
     error,
     reload,
@@ -100,10 +105,11 @@ export default function Dashboard() {
 
       <ErrorBanner message={error} onRetry={reload} />
 
-      {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Summary Cards — 4-col grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           <>
+            <SummaryCardSkeleton />
             <SummaryCardSkeleton />
             <SummaryCardSkeleton />
             <SummaryCardSkeleton />
@@ -129,6 +135,12 @@ export default function Dashboard() {
               trend={savings >= 0 ? "up" : "down"}
               description={savings >= 0 ? "positive balance" : "deficit"}
             />
+            <SummaryCard
+              title="Monthly Subscriptions"
+              amount={formatINR(Math.round(monthlySubscriptionCost))}
+              icon={Repeat}
+              description={`est. per month`}
+            />
           </>
         )}
       </div>
@@ -146,6 +158,59 @@ export default function Dashboard() {
           </div>
         </div>
       ) : null}
+
+      {/* Upcoming Subscription Payments */}
+      {!isLoading && upcomingPayments.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight mb-4">Upcoming Payments</h2>
+          <Card>
+            <CardContent className="pt-4 divide-y">
+              {upcomingPayments.map((sub) => {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const due = new Date(sub.nextBillingDate);
+                due.setHours(0, 0, 0, 0);
+                const diffDays = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+                const isOverdue = diffDays < 0;
+                const isDueToday = diffDays === 0;
+
+                return (
+                  <div key={sub._id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-1.5 rounded-md ${
+                        isOverdue ? "bg-destructive/10" : isDueToday ? "bg-amber-500/10" : "bg-muted"
+                      }`}>
+                        {isOverdue
+                          ? <AlertCircle className="h-4 w-4 text-destructive" />
+                          : <CalendarClock className={`h-4 w-4 ${
+                              isDueToday ? "text-amber-500" : "text-muted-foreground"
+                            }`} />
+                        }
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{sub.name}</p>
+                        <p className="text-xs text-muted-foreground">{sub.category}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold">{formatINR(sub.amount)}</p>
+                      <p className={`text-xs ${
+                        isOverdue ? "text-destructive" : isDueToday ? "text-amber-500" : "text-muted-foreground"
+                      }`}>
+                        {isOverdue
+                          ? `Overdue by ${Math.abs(diffDays)}d`
+                          : isDueToday
+                          ? "Due today"
+                          : `In ${diffDays} day${diffDays > 1 ? "s" : ""}`}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Cash Flow + Category Spending */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">

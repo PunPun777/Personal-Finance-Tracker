@@ -58,6 +58,16 @@ DELETE /api/accounts/:id              — delete
 
 > **Note:** Account balances are updated atomically when transactions are created, updated, or deleted via MongoDB sessions.
 
+## Subscriptions — ✅ Implemented
+
+```
+GET    /api/subscriptions             — list user's subscriptions
+POST   /api/subscriptions             — create (409 if duplicate name)
+PUT    /api/subscriptions/:id         — update
+DELETE /api/subscriptions/:id         — delete
+POST   /api/subscriptions/process-due — trigger manual processing of due subscriptions
+```
+
 ## Health Check — ✅ Implemented
 
 ```
