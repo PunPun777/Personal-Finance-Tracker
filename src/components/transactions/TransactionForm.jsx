@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
-
 import { TRANSACTION_CATEGORIES } from "../../constants/transactionCategories";
 
 function buildFormState(data) {
@@ -21,6 +20,7 @@ function buildFormState(data) {
       category: "",
       date: new Date().toISOString().split("T")[0],
       description: "",
+      goalId: "",
     };
   }
   return {
@@ -31,10 +31,25 @@ function buildFormState(data) {
       ? new Date(data.date).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0],
     description: data.description || "",
+    goalId: data.goalId ?? "",
   };
 }
 
-export default function TransactionForm({ initialData, isSubmitting = false, onSubmit, onCancel }) {
+/**
+ * @param {Object}   props
+ * @param {Object}   [props.initialData]    - transaction being edited
+ * @param {boolean}  [props.isSubmitting]
+ * @param {Array}    [props.goals]          - active goals for linking
+ * @param {Function} props.onSubmit
+ * @param {Function} props.onCancel
+ */
+export default function TransactionForm({
+  initialData,
+  isSubmitting = false,
+  goals = [],
+  onSubmit,
+  onCancel,
+}) {
   const [formData, setFormData] = useState(() => buildFormState(initialData));
 
   useEffect(() => {
@@ -44,15 +59,22 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
+    const payload = {
       ...formData,
       amount: Number(formData.amount),
-    });
+      // Send null when no goal selected so the backend clears the link
+      goalId: formData.goalId || null,
+    };
+    onSubmit(payload);
   };
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  // Goal contributions are recorded as expenses (money allocated to the goal)
+  const isExpense = formData.type === "expense";
+  const activeGoals = goals.filter((g) => g.status === "active");
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-4">
@@ -61,8 +83,11 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
           <Label htmlFor="tx-type">Type</Label>
           <Select
             value={formData.type}
-            onValueChange={(val) => handleChange("type", val)}
-            required
+            onValueChange={(val) => {
+              handleChange("type", val);
+              // Clear goal link when switching to income — goals require expense type
+              if (val === "income") handleChange("goalId", "");
+            }}
           >
             <SelectTrigger id="tx-type">
               <SelectValue placeholder="Select type" />
@@ -95,7 +120,6 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
           <Select
             value={formData.category}
             onValueChange={(val) => handleChange("category", val)}
-            required
           >
             <SelectTrigger id="tx-category">
               <SelectValue placeholder="Select category" />
@@ -126,11 +150,37 @@ export default function TransactionForm({ initialData, isSubmitting = false, onS
         <Label htmlFor="tx-description">Description (Optional)</Label>
         <Input
           id="tx-description"
-          placeholder="e.g., Groceries at Safeway"
+          placeholder="e.g., Salary deposit"
           value={formData.description}
           onChange={(e) => handleChange("description", e.target.value)}
         />
       </div>
+
+      {/* Goal linking — only shown for expense transactions when goals exist */}
+      {isExpense && activeGoals.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="tx-goal">
+            Link to Goal{" "}
+            <span className="text-muted-foreground font-normal">(Optional)</span>
+          </Label>
+          <Select
+            value={formData.goalId}
+            onValueChange={(val) => handleChange("goalId", val === "none" ? "" : val)}
+          >
+            <SelectTrigger id="tx-goal">
+              <SelectValue placeholder="Select a goal to contribute to" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No goal</SelectItem>
+              {activeGoals.map((g) => (
+                <SelectItem key={g._id} value={g._id}>
+                  {g.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <DialogFooter className="pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>

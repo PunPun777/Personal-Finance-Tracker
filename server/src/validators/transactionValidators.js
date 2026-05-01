@@ -1,6 +1,10 @@
 import { body } from 'express-validator';
 import { TRANSACTION_CATEGORIES } from '../models/Transaction.js';
 
+const goalIdRule = body('goalId')
+  .optional({ nullable: true })
+  .isMongoId().withMessage('goalId must be a valid ID.');
+
 export const createTransactionRules = [
   body('amount')
     .notEmpty().withMessage('Amount is required.')
@@ -22,6 +26,8 @@ export const createTransactionRules = [
   body('date')
     .optional()
     .isISO8601().withMessage('Date must be a valid ISO 8601 date.'),
+
+  goalIdRule,
 ];
 
 export const updateTransactionRules = [
@@ -45,4 +51,6 @@ export const updateTransactionRules = [
   body('date')
     .optional()
     .isISO8601().withMessage('Date must be a valid ISO 8601 date.'),
+
+  goalIdRule,
 ];

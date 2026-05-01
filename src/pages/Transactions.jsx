@@ -51,6 +51,7 @@ import {
 import TransactionForm from "../components/transactions/TransactionForm";
 import { TRANSACTION_CATEGORIES } from "../constants/transactionCategories";
 import { useTransactions } from "../hooks/useTransactions";
+import { useGoals } from "../hooks/useGoals";
 import { ErrorBanner, FeedbackBanner } from "../components/ui/Banners";
 import { AmountCell } from "../components/transactions/AmountCell";
 const TYPE_BADGE_CONFIG = {
@@ -113,6 +114,7 @@ function EmptyState({ hasFilters }) {
 export default function Transactions() {
   const { transactions, isLoading, isSubmitting, error, create, update, remove, reload } =
     useTransactions();
+  const { goals } = useGoals();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -376,6 +378,7 @@ export default function Transactions() {
           <TransactionForm
             initialData={editingTransaction}
             isSubmitting={isSubmitting}
+            goals={goals}
             onSubmit={handleSubmit}
             onCancel={() => setIsDialogOpen(false)}
           />

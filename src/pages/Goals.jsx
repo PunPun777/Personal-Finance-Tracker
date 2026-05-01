@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Plus, AlertCircle, RefreshCw } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -12,6 +12,7 @@ import {
 import GoalCard from "../components/goals/GoalCard";
 import GoalForm from "../components/goals/GoalForm";
 import { useGoals } from "../hooks/useGoals";
+import { ErrorBanner, FeedbackBanner } from "../components/ui/Banners";
 
 function GoalCardSkeleton() {
   return (
@@ -91,31 +92,8 @@ export default function Goals() {
         </Button>
       </div>
 
-      {feedback && (
-        <div
-          className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm font-medium ${
-            feedback.type === "success"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-              : "bg-destructive/10 text-destructive border border-destructive/20"
-          }`}
-        >
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {feedback.message}
-        </div>
-      )}
-
-      {error && !isLoading && (
-        <div className="flex items-center justify-between gap-4 rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-destructive font-medium">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
-          </div>
-          <Button variant="outline" size="sm" onClick={reload} className="gap-2 shrink-0">
-            <RefreshCw className="h-4 w-4" />
-            Retry
-          </Button>
-        </div>
-      )}
+      <FeedbackBanner feedback={feedback} />
+      <ErrorBanner message={!isLoading ? error : null} onRetry={reload} />
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

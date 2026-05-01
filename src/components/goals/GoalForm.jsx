@@ -12,12 +12,11 @@ function defaultDate() {
 
 function buildFormState(data) {
   if (!data) {
-    return { title: "", targetAmount: "", savedAmount: "0", targetDate: defaultDate() };
+    return { title: "", targetAmount: "", targetDate: defaultDate() };
   }
   return {
     title: data.title || "",
     targetAmount: data.targetAmount || "",
-    savedAmount: data.savedAmount ?? "0",
     targetDate: data.targetDate
       ? new Date(data.targetDate).toISOString().split("T")[0]
       : defaultDate(),
@@ -37,7 +36,6 @@ export default function GoalForm({ initialData, isSubmitting = false, onSubmit, 
     onSubmit({
       ...formData,
       targetAmount: Number(formData.targetAmount),
-      savedAmount: Number(formData.savedAmount),
     });
   };
 
@@ -58,34 +56,18 @@ export default function GoalForm({ initialData, isSubmitting = false, onSubmit, 
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="goal-target-amount">Target Amount ($)</Label>
-          <Input
-            id="goal-target-amount"
-            type="number"
-            step="1"
-            min="1"
-            placeholder="5000"
-            value={formData.targetAmount}
-            onChange={(e) => handleChange("targetAmount", e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="goal-saved-amount">Currently Saved ($)</Label>
-          <Input
-            id="goal-saved-amount"
-            type="number"
-            step="1"
-            min="0"
-            placeholder="0"
-            value={formData.savedAmount}
-            onChange={(e) => handleChange("savedAmount", e.target.value)}
-            required
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="goal-target-amount">Target Amount (₹)</Label>
+        <Input
+          id="goal-target-amount"
+          type="number"
+          step="1"
+          min="1"
+          placeholder="50000"
+          value={formData.targetAmount}
+          onChange={(e) => handleChange("targetAmount", e.target.value)}
+          required
+        />
       </div>
 
       <div className="space-y-2">

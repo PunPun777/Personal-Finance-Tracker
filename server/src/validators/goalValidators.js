@@ -14,10 +14,6 @@ export const createGoalRules = [
     .notEmpty().withMessage('Target date is required.')
     .isISO8601().withMessage('Target date must be a valid ISO 8601 date.'),
 
-  body('savedAmount')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('Saved amount must be 0 or greater.'),
-
   body('monthlyContribution')
     .optional({ nullable: true })
     .isFloat({ min: 0 }).withMessage('Monthly contribution must be 0 or greater.'),
@@ -36,10 +32,6 @@ export const updateGoalRules = [
   body('targetDate')
     .optional()
     .isISO8601().withMessage('Target date must be a valid ISO 8601 date.'),
-
-  body('savedAmount')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('Saved amount must be 0 or greater.'),
 
   body('monthlyContribution')
     .optional({ nullable: true })
