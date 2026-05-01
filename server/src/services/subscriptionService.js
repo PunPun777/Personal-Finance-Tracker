@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Subscription from "../models/Subscription.js";
 import Transaction from "../models/Transaction.js";
+import Account from "../models/Account.js";
 import ApiError from "../utils/ApiError.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -34,6 +35,35 @@ export const computeNextBillingDate = (fromDate, billingCycle) => {
       d.setMonth(d.getMonth() + 1);
   }
   return d;
+};
+
+/**
+ * Atomically apply a balance delta to a linked account using $inc.
+ * Rejects (throws) if the operation would push the balance below 0.
+ *
+ * @param {ObjectId|string|null} accountId
+ * @param {ObjectId|string}      userId
+ * @param {number}               delta  — negative for expenses
+ * @param {ClientSession}        session
+ */
+const applyBalanceDelta = async (accountId, userId, delta, session) => {
+  if (!accountId) return; // no account linked — skip
+
+  const account = await Account.findOne({ _id: accountId, userId }).session(session);
+  if (!account) return; // account deleted since subscription was created — skip silently
+
+  if (account.balance + delta < 0) {
+    throw new Error(
+      `Insufficient balance in "${account.name}". ` +
+        `Available: ₹${account.balance.toFixed(2)}, Required: ₹${Math.abs(delta).toFixed(2)}.`,
+    );
+  }
+
+  await Account.updateOne(
+    { _id: accountId },
+    { $inc: { balance: delta } },
+    { session },
+  );
 };
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -167,85 +197,165 @@ export const deleteSubscription = async (subscriptionId, userId) => {
 // ── Recurring Processor ───────────────────────────────────────────────────────
 
 /**
- * Process all due subscriptions for a specific user (or all users if userId is omitted).
+ * Process all due subscriptions.
  *
- * For each subscription where:
- *   - isActive === true
- *   - nextBillingDate <= now
+ * Design:
  *
- * This function will:
- *   1. Create an expense transaction for the subscription amount.
- *   2. Advance nextBillingDate by one billing cycle.
- *   3. Update lastProcessedDate to now (double-billing guard).
+ * 1. IDEMPOTENCY
+ *    Uses findOneAndUpdate with a conditional filter (nextBillingDate: { $lte: now })
+ *    to atomically "claim" a subscription before processing it. If two concurrent
+ *    calls race, only one will get the document back — the other receives null and
+ *    skips. This prevents double-billing even under concurrent execution.
  *
- * Runs each subscription in its own MongoDB session for atomicity.
- * Returns a summary: { processed, skipped, errors[] }
+ * 2. MISSED CYCLES
+ *    A subscription overdue for multiple cycles (e.g. 3 months) is processed in a
+ *    loop — one transaction per missed cycle — until nextBillingDate advances past
+ *    now. Each cycle runs in its own session.
  *
- * NOTE: This function is intentionally NOT scheduled here. Wire it into
- * a cron job, a startup check, or an on-demand API endpoint separately.
+ * 3. ACCOUNT BALANCE
+ *    If the subscription has an accountId, the account balance is debited atomically
+ *    within the same session as the transaction. Insufficient balance aborts the
+ *    session and rolls back the nextBillingDate advance.
  *
- * @param {string|null} userId  Scope to a single user, or null for all users.
+ * 4. SCOPE
+ *    Pass userId to process only that user's subscriptions.
+ *    Pass null to process all users (intended for cron jobs).
+ *
+ * @param {string|null} userId
  * @returns {Promise<{ processed: number, skipped: number, errors: string[] }>}
  */
 export const processDueSubscriptions = async (userId = null) => {
   const now = new Date();
 
-  const filter = {
+  const baseFilter = {
     isActive: true,
     nextBillingDate: { $lte: now },
   };
-  if (userId) filter.userId = userId;
-
-  const dueSubscriptions = await Subscription.find(filter).lean();
+  if (userId) baseFilter.userId = new mongoose.Types.ObjectId(userId);
 
   let processed = 0;
   let skipped = 0;
   const errors = [];
 
-  for (const sub of dueSubscriptions) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  // Fetch IDs of all due subscriptions upfront (lightweight — IDs only)
+  const dueIds = await Subscription.find(baseFilter).select("_id").lean();
 
-    try {
-      // Create the expense transaction
-      await Transaction.create(
+  for (const { _id } of dueIds) {
+    // ── Missed-cycle loop ────────────────────────────────────────────────────
+    // Repeat until nextBillingDate has advanced past now (handles missed cycles).
+    let continueLoop = true;
+
+    while (continueLoop) {
+      // ── Atomic claim + advance ─────────────────────────────────────────────
+      // Atomically reads the current document AND advances nextBillingDate by
+      // one cycle using a MongoDB aggregation pipeline update ($switch + $dateAdd).
+      // The filter's nextBillingDate: { $lte: now } condition means:
+      //   - If another process already advanced it → returns null → we stop.
+      //   - If nextBillingDate is now past today after advancing → the NEXT
+      //     loop iteration will return null → loop terminates naturally.
+      const sub = await Subscription.findOneAndUpdate(
+        {
+          _id,
+          isActive: true,
+          nextBillingDate: { $lte: now },
+        },
         [
           {
-            userId: sub.userId,
-            amount: sub.amount,
-            type: "expense",
-            category: sub.category,
-            description: sub.description
-              ? `[Auto] ${sub.description}`
-              : `[Auto] ${sub.name} subscription`,
-            date: now,
-            accountId: sub.accountId || null,
+            $set: {
+              lastProcessedDate: now,
+              nextBillingDate: {
+                $switch: {
+                  branches: [
+                    {
+                      case: { $eq: ["$billingCycle", "daily"] },
+                      then: { $dateAdd: { startDate: "$nextBillingDate", unit: "day", amount: 1 } },
+                    },
+                    {
+                      case: { $eq: ["$billingCycle", "weekly"] },
+                      then: { $dateAdd: { startDate: "$nextBillingDate", unit: "week", amount: 1 } },
+                    },
+                    {
+                      case: { $eq: ["$billingCycle", "monthly"] },
+                      then: { $dateAdd: { startDate: "$nextBillingDate", unit: "month", amount: 1 } },
+                    },
+                    {
+                      case: { $eq: ["$billingCycle", "quarterly"] },
+                      then: { $dateAdd: { startDate: "$nextBillingDate", unit: "month", amount: 3 } },
+                    },
+                    {
+                      case: { $eq: ["$billingCycle", "yearly"] },
+                      then: { $dateAdd: { startDate: "$nextBillingDate", unit: "year", amount: 1 } },
+                    },
+                  ],
+                  default: { $dateAdd: { startDate: "$nextBillingDate", unit: "month", amount: 1 } },
+                },
+              },
+            },
           },
         ],
-        { session },
+        { new: false }, // return the ORIGINAL document (pre-update values)
       );
 
-      // Advance to the next billing date and record last processed date
-      const nextDate = computeNextBillingDate(sub.nextBillingDate, sub.billingCycle);
-      await Subscription.updateOne(
-        { _id: sub._id },
-        {
-          $set: {
-            nextBillingDate: nextDate,
-            lastProcessedDate: now,
+      // null → already claimed by a concurrent caller, or no longer due
+      if (!sub) {
+        continueLoop = false;
+        break;
+      }
+
+      // ── Session: create transaction + debit account ────────────────────────
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        // Create the auto-expense transaction
+        await Transaction.create(
+          [
+            {
+              userId: sub.userId,
+              amount: sub.amount,
+              type: "expense",
+              category: sub.category,
+              description: sub.description
+                ? `[Auto] ${sub.description}`
+                : `[Auto] ${sub.name}`,
+              date: sub.nextBillingDate, // original billing date as transaction date
+              accountId: sub.accountId || null,
+            },
+          ],
+          { session },
+        );
+
+        // Atomically debit the linked account (if any)
+        await applyBalanceDelta(
+          sub.accountId,
+          sub.userId,
+          -sub.amount,
+          session,
+        );
+
+        await session.commitTransaction();
+        processed++;
+      } catch (err) {
+        await session.abortTransaction();
+
+        // Roll back the nextBillingDate advance so the subscription stays due
+        // for the next run (human can fix the issue — e.g. top up balance)
+        await Subscription.updateOne(
+          { _id: sub._id },
+          {
+            $set: {
+              nextBillingDate: sub.nextBillingDate,
+              lastProcessedDate: sub.lastProcessedDate ?? null,
+            },
           },
-        },
-        { session },
-      );
+        );
 
-      await session.commitTransaction();
-      processed++;
-    } catch (err) {
-      await session.abortTransaction();
-      errors.push(`[${sub.name}] ${err.message}`);
-      skipped++;
-    } finally {
-      session.endSession();
+        errors.push(`[${sub.name}] ${err.message}`);
+        skipped++;
+        continueLoop = false; // don't retry this subscription this run
+      } finally {
+        session.endSession();
+      }
     }
   }
 
