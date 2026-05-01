@@ -1,11 +1,13 @@
 # 🏗 System Architecture
 
-## 🧱 Stack (Phase 1 - MERN)
+## 🧱 Stack (Phase 1 - MERN) — ✅ Implemented
 
 Frontend:
 
-- React + TypeScript
-- Tailwind CSS
+- React (JavaScript/JSX)
+- Tailwind CSS + custom CSS variables
+- shadcn/ui component library
+- Recharts (data visualization)
 
 Backend:
 
@@ -14,31 +16,50 @@ Backend:
 
 Database:
 
-- MongoDB
+- MongoDB (Mongoose ODM)
 
 ## 🔄 Data Flow
 
-User → React → Express API → MongoDB
+```
+User → React UI → Custom Hook → Axios Service → Express API → Service Layer → MongoDB
+```
 
-## 📦 Future Architecture (Phase 2)
+## 📦 Future Architecture (Phase 2) — 🛠️ Planned
 
+```
 React → Node API → MongoDB
-↓
-Python ML Service
+              ↓
+        Python ML Service (FastAPI)
+```
 
-## ⚙️ Services
+## ⚙️ Services — ✅ Implemented
 
-- Auth Service
-- Transaction Service
-- Budget Service
+- Auth Service (register, login, JWT)
+- Transaction Service (CRUD + summary aggregation)
+- Goal Service (CRUD + computed savedAmount via aggregation)
+- Budget Service (CRUD + duplicate prevention)
 
-## 🔐 Security
+## 🔐 Security — ✅ Implemented
 
-- JWT authentication
-- Input validation
-- Rate limiting (future)
+- JWT authentication (Bearer token)
+- Secure password hashing (bcrypt)
+- Input validation (express-validator)
+- Rate limiting (100 requests / 15 minutes)
+- Helmet security headers
+- CORS configuration
+- User-scoped data isolation (all queries filter by userId)
+
+## 🏗 Architecture Patterns — ✅ Implemented
+
+- **Backend:** Routes → Controllers → Services → Models
+- **Frontend:** Pages → Hooks → Services → Axios
+- **Error Handling:** Custom `ApiError` class + centralized error middleware
+- **API Envelope:** Consistent `{ success, message, data }` response format
+- **Optimistic UI:** Immediate state updates with rollback on API failure
+- **Computed Data:** Goal savedAmount derived from transaction aggregation, not stored
 
 ## 📈 Scalability
 
-- Modular backend
-- Service-based architecture
+- Modular backend (each feature is a standalone controller + service + model)
+- Service-based architecture ready for microservice extraction
+- MongoDB compound indexes for query performance

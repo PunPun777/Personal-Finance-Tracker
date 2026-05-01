@@ -22,20 +22,25 @@ Most users:
 
 A full-stack finance tracker that:
 
-- Captures financial data
-- Visualizes insights
-- Enables goal-based financial planning
+- Captures financial data with categorization
+- Visualizes insights via interactive charts
+- Enables goal-based financial planning with transaction linking
+- Provides real-time budget tracking and alerts
+- ✅ Uses INR (₹) currency formatting throughout
+- ✅ Supports dark mode with theme persistence
 - (Future) Uses ML for predictions and recommendations
 
 ## 🎯 Goals
 
-### Phase 1 (MERN)
+### Phase 1 (MERN) — ✅ Core Complete
 
-- Build complete manual tracking system
-- Enable goal planning and tracking
-- Ensure clean, structured data collection
+- ✅ Build complete manual tracking system
+- ✅ Enable goal planning and tracking
+- ✅ Ensure clean, structured data collection
+- ✅ Implement dark mode and premium UI
+- ⚠️ Accounts module (planned, not yet implemented)
 
-### Phase 2 (AI Integration)
+### Phase 2 (AI Integration) — 🛠️ Planned
 
 - Automate categorization
 - Predict future expenses
@@ -50,7 +55,7 @@ A full-stack finance tracker that:
 
 ## 🏆 Success Criteria
 
-- Users can track expenses easily
-- Users can set and track financial goals
-- Dashboard provides clear insights
-- System is scalable and ML-ready
+- ✅ Users can track expenses easily
+- ✅ Users can set and track financial goals
+- ✅ Dashboard provides clear insights
+- ✅ System is scalable and ML-ready
