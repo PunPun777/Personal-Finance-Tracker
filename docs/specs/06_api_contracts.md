@@ -46,12 +46,17 @@ PUT    /api/goals/:id                 — update (savedAmount is read-only)
 DELETE /api/goals/:id                 — delete
 ```
 
-## Accounts — 🛠️ Planned (Not Yet Implemented)
+## Accounts — ✅ Implemented
 
 ```
 GET    /api/accounts                  — list user's accounts
-POST   /api/accounts                  — create account
+GET    /api/accounts/:id              — get single account
+POST   /api/accounts                  — create (409 if duplicate name)
+PUT    /api/accounts/:id              — update (409 on rename conflict)
+DELETE /api/accounts/:id              — delete
 ```
+
+> **Note:** Account balances are updated atomically when transactions are created, updated, or deleted via MongoDB sessions.
 
 ## Health Check — ✅ Implemented
 

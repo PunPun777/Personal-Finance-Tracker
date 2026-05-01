@@ -17,12 +17,17 @@
 - Optional goal linking (goalId field)
 - Transactions linked to a goal contribute to goal progress
 
-## 🏦 Accounts — 🛠️ Planned
+## 🏦 Accounts — ✅ Implemented
 
-- Multiple accounts (cash, bank)
-- Balance tracking
-
-> **Status:** Route and page exist but functionality is not yet implemented. Backend model and APIs are not built.
+- Multiple accounts (Wallet, Bank, Credit Card, Savings, Investment, Other)
+- Balance tracking per account
+- Account-type specific icons
+- Duplicate name prevention (one name per user)
+- Transaction integration — account balances update atomically:
+  - Income → balance increases
+  - Expense → balance decreases
+- Insufficient balance protection (rejects expenses that would go negative)
+- MongoDB session-based transactions for data consistency
 
 ## 📊 Dashboard — ✅ Implemented
 

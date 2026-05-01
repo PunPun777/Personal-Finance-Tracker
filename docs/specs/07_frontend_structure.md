@@ -8,12 +8,13 @@
     /transactions    → TransactionForm, AmountCell
     /budgeting       → BudgetForm, BudgetCard
     /goals           → GoalForm, GoalCard
+    /accounts        → AccountForm, AccountCard
     ProtectedRoute.jsx
   /pages             → Dashboard, Transactions, Budgets, Goals, Accounts, Login, Register
-  /hooks             → useAuth, useTransactions, useBudgets, useGoals, useDashboard, useTheme
-  /services          → apiClient, authService, transactionService, budgetService, goalService, dashboardService
+  /hooks             → useAuth, useTransactions, useBudgets, useGoals, useAccounts, useDashboard, useTheme
+  /services          → apiClient, authService, transactionService, budgetService, goalService, accountService, dashboardService
   /utils             → formatINR, computeBudgetStats
-  /constants         → transactionCategories, budgetCategories, chartColors
+  /constants         → transactionCategories, budgetCategories, accountTypes, chartColors
   /context           → AuthProvider, AuthContext, ThemeProvider, ThemeContext
   /layouts           → AppLayout (navbar + page outlet)
   /lib               → cn (class merge utility)
@@ -45,7 +46,7 @@ Page Content (Outlet)
 | Transactions | `/transactions` | ✅ |
 | Budgets | `/budgets` | ✅ |
 | Goals | `/goals` | ✅ |
-| Accounts | `/accounts` | 🛠️ Placeholder only |
+| Accounts | `/accounts` | ✅ |
 
 ---
 

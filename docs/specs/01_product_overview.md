@@ -32,13 +32,13 @@ A full-stack finance tracker that:
 
 ## 🎯 Goals
 
-### Phase 1 (MERN) — ✅ Core Complete
+### Phase 1 (MERN) — ✅ Complete
 
 - ✅ Build complete manual tracking system
 - ✅ Enable goal planning and tracking
 - ✅ Ensure clean, structured data collection
 - ✅ Implement dark mode and premium UI
-- ⚠️ Accounts module (planned, not yet implemented)
+- ✅ Multi-account support with balance tracking
 
 ### Phase 2 (AI Integration) — 🛠️ Planned
 

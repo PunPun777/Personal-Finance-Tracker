@@ -5,6 +5,10 @@ const goalIdRule = body('goalId')
   .optional({ nullable: true })
   .isMongoId().withMessage('goalId must be a valid ID.');
 
+const accountIdRule = body('accountId')
+  .optional({ nullable: true })
+  .isMongoId().withMessage('accountId must be a valid ID.');
+
 export const createTransactionRules = [
   body('amount')
     .notEmpty().withMessage('Amount is required.')
@@ -28,6 +32,7 @@ export const createTransactionRules = [
     .isISO8601().withMessage('Date must be a valid ISO 8601 date.'),
 
   goalIdRule,
+  accountIdRule,
 ];
 
 export const updateTransactionRules = [
@@ -53,4 +58,5 @@ export const updateTransactionRules = [
     .isISO8601().withMessage('Date must be a valid ISO 8601 date.'),
 
   goalIdRule,
+  accountIdRule,
 ];

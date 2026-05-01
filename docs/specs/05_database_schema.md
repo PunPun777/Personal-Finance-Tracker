@@ -19,6 +19,7 @@
 - type (enum: "income" | "expense")
 - date (default: now)
 - goalId (ref: Goal, optional, indexed) — links transaction to a savings goal
+- accountId (ref: Account, optional, indexed) — links transaction to an account for balance tracking
 - createdAt
 - updatedAt
 
@@ -27,15 +28,27 @@
 - `{ userId: 1, date: -1 }` — user timeline queries
 - `{ userId: 1, category: 1 }` — category filtering
 - `{ userId: 1, goalId: 1 }` — goal contribution aggregation
+- `{ userId: 1, accountId: 1 }` — account balance queries
 
-## 🏦 Account — 🛠️ Planned (Not Yet Implemented)
+## 🏦 Account — ✅ Implemented
 
 - \_id
-- userId
-- name
-- balance
+- userId (ref: User, indexed)
+- name (2–50 chars, unique per user)
+- type (enum: Wallet / Bank / Credit Card / Savings / Investment / Other)
+- balance (min: 0 — cannot be negative)
+- currency (3-char code, default: "INR")
+- isActive (boolean, default: true)
+- createdAt
+- updatedAt
 
-> **Status:** Schema designed but no Mongoose model or API exists yet.
+### Indexes
+
+- `{ userId: 1, name: 1 }` — unique compound (one account name per user)
+
+### Transaction Integration
+
+When a transaction is created, updated, or deleted with an `accountId`, the linked account's balance is atomically adjusted using MongoDB sessions and `$inc` operations. Income increases the balance; expense decreases it. Expenses that would push the balance below 0 are rejected with a 400 error.
 
 ## 🎯 Budget — ✅ Implemented
 

@@ -35,9 +35,10 @@ React → Node API → MongoDB
 ## ⚙️ Services — ✅ Implemented
 
 - Auth Service (register, login, JWT)
-- Transaction Service (CRUD + summary aggregation)
+- Transaction Service (CRUD + summary aggregation + atomic account balance updates)
 - Goal Service (CRUD + computed savedAmount via aggregation)
 - Budget Service (CRUD + duplicate prevention)
+- Account Service (CRUD + duplicate name prevention + balance tracking)
 
 ## 🔐 Security — ✅ Implemented
 

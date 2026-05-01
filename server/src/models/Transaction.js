@@ -64,6 +64,12 @@ const transactionSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    accountId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Account",
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -73,6 +79,7 @@ const transactionSchema = new mongoose.Schema(
 transactionSchema.index({ userId: 1, date: -1 });
 transactionSchema.index({ userId: 1, category: 1 });
 transactionSchema.index({ userId: 1, goalId: 1 });
+transactionSchema.index({ userId: 1, accountId: 1 });
 
 transactionSchema.set("toJSON", {
   transform: (_doc, ret) => {
