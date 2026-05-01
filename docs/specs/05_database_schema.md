@@ -50,6 +50,27 @@
 
 When a transaction is created, updated, or deleted with an `accountId`, the linked account's balance is atomically adjusted using MongoDB sessions and `$inc` operations. Income increases the balance; expense decreases it. Expenses that would push the balance below 0 are rejected with a 400 error.
 
+## 🔄 Subscription — ✅ Implemented
+
+- \_id
+- userId (ref: User, indexed)
+- name (min 2, max 100 chars)
+- amount (min: 0.01)
+- billingCycle (enum: daily, weekly, monthly, quarterly, yearly)
+- nextBillingDate (required)
+- category (enum: 15 standardized categories)
+- accountId (ref: Account, optional, indexed) — links subscription to an account
+- isActive (boolean, default: true)
+- description (optional, max 300 chars)
+- lastProcessedDate (default: null) — prevents double-billing within the same cycle
+- createdAt
+- updatedAt
+
+### Indexes
+
+- `{ userId: 1, name: 1 }` — unique compound (one subscription name per user)
+- `{ isActive: 1, nextBillingDate: 1 }` — for the recurring processor query
+
 ## 🎯 Budget — ✅ Implemented
 
 - \_id
