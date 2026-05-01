@@ -4,9 +4,10 @@ import Transaction from "../models/Transaction.js";
 import ApiError from "../utils/ApiError.js";
 
 /**
- * Aggregates the total amount of all income transactions linked to a goal.
- * This is the canonical source of truth for savedAmount — it is never
- * stored on the Goal document itself.
+ * Aggregates the total amount of all expense transactions linked to a goal.
+ * Goal contributions are recorded as expenses (money leaving your account
+ * and being allocated to the goal). This is the canonical source of truth
+ * for savedAmount — it is never stored on the Goal document itself.
  *
  * @param {ObjectId|string} goalId
  * @param {ObjectId|string} userId  - guards against cross-user data leakage
@@ -18,7 +19,7 @@ async function computeSavedAmount(goalId, userId) {
       $match: {
         goalId: new mongoose.Types.ObjectId(goalId),
         userId: new mongoose.Types.ObjectId(userId),
-        type: "income",
+        type: "expense",
       },
     },
     { $group: { _id: null, total: { $sum: "$amount" } } },

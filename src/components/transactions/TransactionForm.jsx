@@ -72,8 +72,8 @@ export default function TransactionForm({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Only income transactions are meaningful for goal contributions
-  const isIncome = formData.type === "income";
+  // Goal contributions are recorded as expenses (money allocated to the goal)
+  const isExpense = formData.type === "expense";
   const activeGoals = goals.filter((g) => g.status === "active");
 
   return (
@@ -85,8 +85,8 @@ export default function TransactionForm({
             value={formData.type}
             onValueChange={(val) => {
               handleChange("type", val);
-              // Clear goal link when switching to expense
-              if (val === "expense") handleChange("goalId", "");
+              // Clear goal link when switching to income — goals require expense type
+              if (val === "income") handleChange("goalId", "");
             }}
           >
             <SelectTrigger id="tx-type">
@@ -156,8 +156,8 @@ export default function TransactionForm({
         />
       </div>
 
-      {/* Goal linking — only shown for income + when goals exist */}
-      {isIncome && activeGoals.length > 0 && (
+      {/* Goal linking — only shown for expense transactions when goals exist */}
+      {isExpense && activeGoals.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="tx-goal">
             Link to Goal{" "}
