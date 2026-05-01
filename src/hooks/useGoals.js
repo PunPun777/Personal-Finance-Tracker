@@ -73,9 +73,7 @@ export function useGoals() {
     }
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
+  useEffect(() => {    load();
   }, [load]);
 
   const create = useCallback(async (formData) => {

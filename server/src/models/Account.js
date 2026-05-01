@@ -48,9 +48,7 @@ const accountSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-
-// A user may not have two accounts with the same name
-accountSchema.index({ userId: 1, name: 1 }, { unique: true });
+accountSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 accountSchema.set("toJSON", {
   transform: (_doc, ret) => {

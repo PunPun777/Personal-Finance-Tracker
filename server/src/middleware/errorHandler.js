@@ -1,7 +1,5 @@
 import ApiError from "../utils/ApiError.js";
-
-// eslint-disable-next-line no-unused-vars
-const errorHandler = (err, _req, res, _next) => {
+const errorHandler = (err, _req, res, _next) => {
   let error = { ...err };
   error.message = err.message;
   error.statusCode = err.statusCode || 500;

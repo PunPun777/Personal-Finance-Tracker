@@ -8,9 +8,7 @@ import rateLimit from "express-rate-limit";
 import connectDB from "./config/db.js";
 import errorHandler from "./middleware/errorHandler.js";
 import ApiError from "./utils/ApiError.js";
-
-// Route imports
-import authRoutes from "./routes/authRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import goalRoutes from "./routes/goalRoutes.js";
 import budgetRoutes from "./routes/budgetRoutes.js";

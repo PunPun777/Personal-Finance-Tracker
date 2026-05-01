@@ -5,16 +5,12 @@ const STORAGE_KEY = "fintrack-theme";
 
 function getInitialTheme() {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "dark" || stored === "light") return stored;
-  // Respect OS preference when no stored preference exists
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (stored === "dark" || stored === "light") return stored;  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(getInitialTheme);
-
-  // Apply/remove the class on <html> whenever theme changes
-  useEffect(() => {
+  useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");

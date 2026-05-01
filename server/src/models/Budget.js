@@ -1,9 +1,7 @@
 import mongoose from "mongoose";
 import { TRANSACTION_CATEGORIES } from "./Transaction.js";
 
-// "Overall Monthly" is a synthetic category used by the frontend
-// to represent a single cap across all spending.
-const BUDGET_CATEGORIES = ["Overall Monthly", ...TRANSACTION_CATEGORIES];
+const BUDGET_CATEGORIES = ["Overall Monthly", ...TRANSACTION_CATEGORIES];
 
 const categoryBudgetSchema = new mongoose.Schema(
   {
@@ -44,9 +42,7 @@ const budgetSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Budget limit is required."],
       min: [0.01, "Limit must be greater than 0."],
-    },
-    // Optional nested breakdown (e.g. when category = "Overall Monthly")
-    categoryBudgets: {
+    },    categoryBudgets: {
       type: [categoryBudgetSchema],
       default: undefined,
     },
@@ -55,9 +51,7 @@ const budgetSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-
-// A user may only have one budget per category (e.g. one "Food & Dining" budget).
-budgetSchema.index({ userId: 1, category: 1 }, { unique: true });
+budgetSchema.index({ userId: 1, category: 1 }, { unique: true });
 
 budgetSchema.set("toJSON", {
   transform: (_doc, ret) => {

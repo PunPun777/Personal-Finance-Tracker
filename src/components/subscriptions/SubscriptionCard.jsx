@@ -53,7 +53,7 @@ function getCategoryIcon(category) {
 
 function getStatus(nextBillingDate) {
   const now = new Date();
-  now.setHours(0, 0, 0, 0); // start of today
+  now.setHours(0, 0, 0, 0); 
 
   const nextDate = new Date(nextBillingDate);
   nextDate.setHours(0, 0, 0, 0);
@@ -73,7 +73,6 @@ export default function SubscriptionCard({ subscription, accountName, onEdit, on
 
   return (
     <Card className={`relative overflow-hidden transition-all hover:shadow-md ${status.label === "Overdue" ? "border-destructive/50" : ""}`}>
-      {/* Top accent bar */}
       <div className={`absolute top-0 left-0 w-full h-1 ${
         status.label === "Overdue" 
           ? "bg-destructive" 

@@ -60,9 +60,7 @@ const subscriptionSchema = new mongoose.Schema(
       maxlength: [300, "Description cannot exceed 300 characters."],
       default: "",
     },
-    // Tracks the last date a transaction was auto-generated for this subscription.
-    // Used to prevent double-billing within the same cycle.
-    lastProcessedDate: {
+        lastProcessedDate: {
       type: Date,
       default: null,
     },
@@ -71,10 +69,8 @@ const subscriptionSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-
-// A user can only have one active subscription with the same name (prevents duplicates)
-subscriptionSchema.index({ userId: 1, name: 1 }, { unique: true });
-subscriptionSchema.index({ isActive: 1, nextBillingDate: 1 }); // for the recurring processor query
+subscriptionSchema.index({ userId: 1, name: 1 }, { unique: true });
+subscriptionSchema.index({ isActive: 1, nextBillingDate: 1 }); 
 
 subscriptionSchema.set("toJSON", {
   transform: (_doc, ret) => {

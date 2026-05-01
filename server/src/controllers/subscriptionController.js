@@ -55,13 +55,7 @@ export const deleteSubscription = async (req, res, next) => {
     next(error);
   }
 };
-
-/**
- * POST /api/subscriptions/process-due
- * On-demand trigger to process all due subscriptions for the authenticated user.
- * This endpoint can later be replaced by a cron job calling processDueSubscriptions().
- */
-export const processDue = async (req, res, next) => {
+export const processDue = async (req, res, next) => {
   try {
     const result = await subscriptionService.processDueSubscriptions(req.user._id);
     sendSuccess(res, 200, "Due subscriptions processed.", result);

@@ -34,16 +34,7 @@ function buildFormState(data) {
     goalId: data.goalId ?? "",
   };
 }
-
-/**
- * @param {Object}   props
- * @param {Object}   [props.initialData]    - transaction being edited
- * @param {boolean}  [props.isSubmitting]
- * @param {Array}    [props.goals]          - active goals for linking
- * @param {Function} props.onSubmit
- * @param {Function} props.onCancel
- */
-export default function TransactionForm({
+export default function TransactionForm({
   initialData,
   isSubmitting = false,
   goals = [],
@@ -52,18 +43,14 @@ export default function TransactionForm({
 }) {
   const [formData, setFormData] = useState(() => buildFormState(initialData));
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormData(buildFormState(initialData));
+  useEffect(() => {    setFormData(buildFormState(initialData));
   }, [initialData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const payload = {
       ...formData,
-      amount: Number(formData.amount),
-      // Send null when no goal selected so the backend clears the link
-      goalId: formData.goalId || null,
+      amount: Number(formData.amount),      goalId: formData.goalId || null,
     };
     onSubmit(payload);
   };
@@ -71,9 +58,7 @@ export default function TransactionForm({
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
-
-  // Goal contributions are recorded as expenses (money allocated to the goal)
-  const isExpense = formData.type === "expense";
+  const isExpense = formData.type === "expense";
   const activeGoals = goals.filter((g) => g.status === "active");
 
   return (
@@ -84,9 +69,7 @@ export default function TransactionForm({
           <Select
             value={formData.type}
             onValueChange={(val) => {
-              handleChange("type", val);
-              // Clear goal link when switching to income — goals require expense type
-              if (val === "income") handleChange("goalId", "");
+              handleChange("type", val);              if (val === "income") handleChange("goalId", "");
             }}
           >
             <SelectTrigger id="tx-type">
@@ -156,7 +139,6 @@ export default function TransactionForm({
         />
       </div>
 
-      {/* Goal linking — only shown for expense transactions when goals exist */}
       {isExpense && activeGoals.length > 0 && (
         <div className="space-y-2">
           <Label htmlFor="tx-goal">

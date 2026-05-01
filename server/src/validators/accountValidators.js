@@ -1,8 +1,6 @@
 import { body } from "express-validator";
 import { ACCOUNT_TYPES } from "../models/Account.js";
-
-// ── Create ──────────────────────────────────────────────────────────────────
-
+
 export const createAccountRules = [
   body("name")
     .trim()
@@ -25,9 +23,7 @@ export const createAccountRules = [
     .isLength({ min: 3, max: 3 })
     .withMessage("Currency must be a 3-character code (e.g. INR)."),
 ];
-
-// ── Update (all fields optional) ────────────────────────────────────────────
-
+
 export const updateAccountRules = [
   body("name")
     .optional()

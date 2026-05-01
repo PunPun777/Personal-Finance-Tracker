@@ -75,7 +75,6 @@ export default function Accounts() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
@@ -89,11 +88,9 @@ export default function Accounts() {
         </Button>
       </div>
 
-      {/* Banners */}
       <FeedbackBanner feedback={feedback} />
       <ErrorBanner message={!isLoading ? error : null} onRetry={reload} />
 
-      {/* Content */}
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -124,7 +121,6 @@ export default function Accounts() {
         </div>
       )}
 
-      {/* Create / Edit Dialog */}
       <Dialog
         open={isDialogOpen}
         onOpenChange={(open) => { if (!isSubmitting) setIsDialogOpen(open); }}
@@ -149,7 +145,6 @@ export default function Accounts() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={!!deletingId}
         onOpenChange={(open) => !open && setDeletingId(null)}

@@ -38,9 +38,7 @@ export function useSubscriptions() {
     }
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
+  useEffect(() => {    load();
   }, [load]);
 
   const create = useCallback(async (formData) => {
@@ -107,7 +105,7 @@ export function useSubscriptions() {
     setIsSubmitting(true);
     try {
       const { data } = await processDueSubscriptions();
-      await load(); // Reload to get updated nextBillingDates
+      await load(); 
       return { success: true, data };
     } catch (err) {
       return {

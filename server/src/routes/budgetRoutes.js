@@ -8,9 +8,7 @@ import validate from "../middleware/validationMiddleware.js";
 import protect from "../middleware/authMiddleware.js";
 
 const router = Router();
-
-// All budget routes require authentication
-router.use(protect);
+router.use(protect);
 
 router.get("/", budgetController.getBudgets);
 router.post("/", createBudgetRules, validate, budgetController.createBudget);

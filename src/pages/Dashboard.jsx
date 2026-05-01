@@ -105,7 +105,6 @@ export default function Dashboard() {
 
       <ErrorBanner message={error} onRetry={reload} />
 
-      {/* Summary Cards — 4-col grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           <>
@@ -145,7 +144,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Financial Insights */}
       {isLoading ? (
         <InsightsSkeleton />
       ) : insights.length > 0 ? (
@@ -159,7 +157,6 @@ export default function Dashboard() {
         </div>
       ) : null}
 
-      {/* Upcoming Subscription Payments */}
       {!isLoading && upcomingPayments.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold tracking-tight mb-4">Upcoming Payments</h2>
@@ -212,7 +209,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Cash Flow + Category Spending */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -296,7 +292,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Monthly Expenses + Recent Transactions */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>

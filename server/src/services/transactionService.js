@@ -4,27 +4,9 @@ import Account from "../models/Account.js";
 import ApiError from "../utils/ApiError.js";
 
 const ALLOWED_SORT_FIELDS = ["date", "amount", "category", "createdAt"];
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Compute the balance delta for an account given a transaction type and amount.
- *   income  → +amount  (money coming in)
- *   expense → -amount  (money going out)
- */
-const balanceDelta = (type, amount) => (type === "income" ? amount : -amount);
-
-/**
- * Atomically apply a delta to an account balance using $inc.
- * Rejects (throws 400) if the operation would push balance below 0.
- *
- * @param {ObjectId|string} accountId
- * @param {ObjectId|string} userId    - ownership guard
- * @param {number}          delta     - positive = increase, negative = decrease
- * @param {ClientSession}   session   - Mongoose session for atomicity
- */
-const applyBalanceDelta = async (accountId, userId, delta, session) => {
-  if (!accountId) return; // transaction not linked to any account — skip
+const balanceDelta = (type, amount) => (type === "income" ? amount : -amount);
+const applyBalanceDelta = async (accountId, userId, delta, session) => {
+  if (!accountId) return; 
 
   const account = await Account.findOne({ _id: accountId, userId }).session(session);
   if (!account) {
@@ -39,17 +21,13 @@ const applyBalanceDelta = async (accountId, userId, delta, session) => {
       400,
     );
   }
-
-  // $inc is atomic — no read-modify-write race condition possible
-  await Account.updateOne(
+  await Account.updateOne(
     { _id: accountId, userId },
     { $inc: { balance: delta } },
     { session },
   );
 };
-
-// ── Queries ───────────────────────────────────────────────────────────────────
-
+
 export const getTransactions = async (userId, query = {}) => {
   const {
     category,
@@ -101,14 +79,7 @@ export const getTransactions = async (userId, query = {}) => {
     totalPages: Math.ceil(total / safeLimit),
   };
 };
-
-// ── Mutations ─────────────────────────────────────────────────────────────────
-
-/**
- * Create a transaction and atomically update the linked account balance.
- * Runs inside a MongoDB session to guarantee consistency.
- */
-export const createTransaction = async (userId, data) => {
+export const createTransaction = async (userId, data) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -133,21 +104,7 @@ export const createTransaction = async (userId, data) => {
     session.endSession();
   }
 };
-
-/**
- * Update a transaction and reconcile the linked account balance.
- *
- * Reconciliation strategy:
- *   1. Reverse the OLD transaction's effect on the OLD account.
- *   2. Apply the NEW transaction's effect on the NEW account.
- *
- * This handles all edge cases:
- *   - amount changed  (same account, different magnitude)
- *   - type changed    (income ↔ expense flip)
- *   - account changed (move transaction between accounts)
- *   - account removed (set accountId = null)
- */
-export const updateTransaction = async (transactionId, userId, updates) => {
+export const updateTransaction = async (transactionId, userId, updates) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -159,9 +116,7 @@ export const updateTransaction = async (transactionId, userId, updates) => {
         404,
       );
     }
-
-    // Snapshot the old values BEFORE applying updates
-    const oldAccountId = transaction.accountId;
+    const oldAccountId = transaction.accountId;
     const oldDelta = balanceDelta(transaction.type, transaction.amount);
 
     const allowedFields = ["amount", "type", "category", "description", "date", "goalId", "accountId"];
@@ -179,15 +134,11 @@ export const updateTransaction = async (transactionId, userId, updates) => {
     const sameAccount =
       oldAccountId?.toString() === newAccountId?.toString();
 
-    if (sameAccount) {
-      // Same account: apply the net difference in a single $inc
-      const netDelta = newDelta - oldDelta;
+    if (sameAccount) {      const netDelta = newDelta - oldDelta;
       if (netDelta !== 0) {
         await applyBalanceDelta(newAccountId, userId, netDelta, session);
       }
-    } else {
-      // Different accounts: reverse old, apply new independently
-      if (oldAccountId) {
+    } else {      if (oldAccountId) {
         await applyBalanceDelta(oldAccountId, userId, -oldDelta, session);
       }
       if (newAccountId) {
@@ -204,11 +155,7 @@ export const updateTransaction = async (transactionId, userId, updates) => {
     session.endSession();
   }
 };
-
-/**
- * Delete a transaction and atomically reverse its balance effect.
- */
-export const deleteTransaction = async (transactionId, userId) => {
+export const deleteTransaction = async (transactionId, userId) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -223,9 +170,7 @@ export const deleteTransaction = async (transactionId, userId) => {
         404,
       );
     }
-
-    // Reverse the balance effect
-    if (transaction.accountId) {
+    if (transaction.accountId) {
       await applyBalanceDelta(
         transaction.accountId,
         userId,
@@ -243,9 +188,7 @@ export const deleteTransaction = async (transactionId, userId) => {
     session.endSession();
   }
 };
-
-// ── Summary ───────────────────────────────────────────────────────────────────
-
+
 export const getTransactionSummary = async (
   userId,
   { startDate, endDate } = {},

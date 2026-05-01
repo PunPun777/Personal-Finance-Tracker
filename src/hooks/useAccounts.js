@@ -37,18 +37,14 @@ export function useAccounts() {
     }
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
+  useEffect(() => {    load();
   }, [load]);
 
   const create = useCallback(async (formData) => {
     setIsSubmitting(true);
     try {
       const { data } = await createAccount(formData);
-      if (isMounted.current) {
-        // Prepend new account so it appears at the top
-        setAccounts((prev) => [data.account, ...prev]);
+      if (isMounted.current) {        setAccounts((prev) => [data.account, ...prev]);
       }
       return { success: true };
     } catch (err) {
@@ -82,9 +78,7 @@ export function useAccounts() {
   }, []);
 
   const remove = useCallback(
-    async (id) => {
-      // Optimistic removal — instant UI feedback
-      const snapshot = accounts;
+    async (id) => {      const snapshot = accounts;
       setAccounts((prev) => prev.filter((a) => a._id !== id));
       try {
         await deleteAccount(id);

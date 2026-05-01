@@ -2,9 +2,7 @@ import { body } from "express-validator";
 import { TRANSACTION_CATEGORIES } from "../models/Transaction.js";
 
 const BUDGET_CATEGORIES = ["Overall Monthly", ...TRANSACTION_CATEGORIES];
-
-// ── Shared sub-rules for the optional categoryBudgets array ──────────────────
-
+
 const categoryBudgetRules = [
   body("categoryBudgets")
     .optional()
@@ -25,9 +23,7 @@ const categoryBudgetRules = [
     .isFloat({ gt: 0 })
     .withMessage("Each category budget limit must be a positive number."),
 ];
-
-// ── Create ────────────────────────────────────────────────────────────────────
-
+
 export const createBudgetRules = [
   body("category")
     .notEmpty()
@@ -45,9 +41,7 @@ export const createBudgetRules = [
 
   ...categoryBudgetRules,
 ];
-
-// ── Update (all fields optional) ─────────────────────────────────────────────
-
+
 export const updateBudgetRules = [
   body("limit")
     .optional()
