@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Plus, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,21 +8,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import AccountCard from "../components/accounts/AccountCard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import AccountCard, { AccountCardSkeleton } from "../components/accounts/AccountCard";
 import AccountForm from "../components/accounts/AccountForm";
-
-// Mock data to be replaced with real backend connection
-const INITIAL_ACCOUNTS = [
-  { _id: "1", name: "Main Bank", type: "Bank", balance: 50000, currency: "INR", isActive: true },
-  { _id: "2", name: "Cash Wallet", type: "Wallet", balance: 1500, currency: "INR", isActive: true },
-];
+import { useAccounts } from "../hooks/useAccounts";
+import { ErrorBanner, FeedbackBanner } from "../components/ui/Banners";
 
 export default function Accounts() {
-  const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
+  const { accounts, isLoading, isSubmitting, error, create, update, remove, reload } =
+    useAccounts();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const feedbackTimer = useRef(null);
 
-  const handleOpenCreate = () => {
+  const showFeedback = useCallback((message, type = "error") => {
+    clearTimeout(feedbackTimer.current);
+    setFeedback({ message, type });
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 4000);
+  }, []);
+
+  const handleOpenAdd = () => {
     setEditingAccount(null);
     setIsDialogOpen(true);
   };
@@ -32,73 +49,90 @@ export default function Accounts() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (formData) => {
-    if (editingAccount) {
-      setAccounts(accounts.map(acc => 
-        acc._id === editingAccount._id ? { ...acc, ...formData } : acc
-      ));
+  const handleSubmit = async (formData) => {
+    const result = editingAccount
+      ? await update(editingAccount._id, formData)
+      : await create(formData);
+
+    if (result.success) {
+      setIsDialogOpen(false);
+      showFeedback(
+        editingAccount ? "Account updated." : "Account created.",
+        "success"
+      );
     } else {
-      const newAccount = {
-        _id: Math.random().toString(36).substr(2, 9),
-        ...formData,
-        isActive: true,
-        currency: "INR"
-      };
-      setAccounts([...accounts, newAccount]);
+      showFeedback(result.message);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (id) => {
-    setAccounts(accounts.filter(acc => acc._id !== id));
+  const handleConfirmDelete = async () => {
+    if (!deletingId) return;
+    const result = await remove(deletingId);
+    setDeletingId(null);
+    if (!result.success) showFeedback(result.message);
+    else showFeedback("Account deleted.", "success");
   };
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-6 pb-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
           <p className="text-muted-foreground">
-            Manage your bank and cash accounts here.
+            Manage your bank and cash accounts.
           </p>
         </div>
-        <Button onClick={handleOpenCreate} className="bg-gradient-primary">
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={handleOpenAdd} className="gap-2 shrink-0">
+          <Plus className="h-4 w-4" />
           Add Account
         </Button>
       </div>
 
-      {accounts.length > 0 ? (
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {/* Banners */}
+      <FeedbackBanner feedback={feedback} />
+      <ErrorBanner message={!isLoading ? error : null} onRetry={reload} />
+
+      {/* Content */}
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <AccountCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : accounts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg py-16 px-4 text-center">
+          <div className="rounded-full bg-muted p-4 mb-4">
+            <CreditCard className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-1">No accounts yet</h3>
+          <p className="text-sm text-muted-foreground max-w-sm mb-4">
+            Add your first account to start tracking balances across your bank, wallet, and savings.
+          </p>
+          <Button onClick={handleOpenAdd}>Add your first account</Button>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {accounts.map((account) => (
             <AccountCard
               key={account._id}
               account={account}
               onEdit={handleOpenEdit}
-              onDelete={handleDelete}
+              onDelete={setDeletingId}
             />
           ))}
         </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg bg-muted/20">
-          <div className="p-4 bg-muted rounded-full mb-4">
-            <Plus className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">No accounts found</h3>
-          <p className="text-muted-foreground max-w-sm mb-6">
-            You haven't added any accounts yet. Create your first account to start tracking your balances.
-          </p>
-          <Button onClick={handleOpenCreate} className="bg-gradient-primary">
-            Add Account
-          </Button>
-        </div>
       )}
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+      {/* Create / Edit Dialog */}
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => { if (!isSubmitting) setIsDialogOpen(open); }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              {editingAccount ? "Edit Account" : "Add New Account"}
+              {editingAccount ? "Edit Account" : "Add Account"}
             </DialogTitle>
             <DialogDescription>
               {editingAccount
@@ -110,9 +144,34 @@ export default function Accounts() {
             account={editingAccount}
             onSubmit={handleSubmit}
             onCancel={() => setIsDialogOpen(false)}
+            isSubmitting={isSubmitting}
           />
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The account will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

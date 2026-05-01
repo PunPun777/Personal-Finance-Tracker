@@ -55,3 +55,31 @@ export default function AccountCard({ account, onEdit, onDelete }) {
     </Card>
   );
 }
+
+export function AccountCardSkeleton() {
+  return (
+    <Card className="relative overflow-hidden before:absolute before:top-0 before:left-0 before:w-full before:h-1 before:bg-muted">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center space-x-3">
+            <div className="h-9 w-9 bg-muted rounded-md animate-pulse" />
+            <div className="space-y-1.5">
+              <div className="h-4 w-28 bg-muted rounded animate-pulse" />
+              <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="flex space-x-1">
+            <div className="h-8 w-8 bg-muted rounded animate-pulse" />
+            <div className="h-8 w-8 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="mt-4 space-y-2">
+          <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+          <div className="h-7 w-36 bg-muted rounded animate-pulse" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

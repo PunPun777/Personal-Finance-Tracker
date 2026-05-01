@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { ACCOUNT_TYPES } from "../../constants/accountTypes";
 
-export default function AccountForm({ account, onSubmit, onCancel }) {
+export default function AccountForm({ account, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState({
     name: account?.name || "",
     type: account?.type || "Bank",
@@ -76,11 +77,15 @@ export default function AccountForm({ account, onSubmit, onCancel }) {
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit" className="bg-gradient-primary">
-          {account ? "Update Account" : "Add Account"}
+        <Button type="submit" className="bg-gradient-primary" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{account ? "Saving..." : "Adding..."}</>
+          ) : (
+            account ? "Update Account" : "Add Account"
+          )}
         </Button>
       </div>
     </form>
