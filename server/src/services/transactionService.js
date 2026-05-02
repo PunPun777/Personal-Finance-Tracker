@@ -4,30 +4,31 @@ import Account from "../models/Account.js";
 import ApiError from "../utils/ApiError.js";
 
 const ALLOWED_SORT_FIELDS = ["date", "amount", "category", "createdAt"];
-const balanceDelta = (type, amount) => (type === "income" ? amount : -amount);
-const applyBalanceDelta = async (accountId, userId, delta, session) => {
-  if (!accountId) return; 
 
-  const account = await Account.findOne({ _id: accountId, userId }).session(session);
+const balanceDelta = (type, amount) => (type === "income" ? amount : -amount);
+
+const applyBalanceDelta = async (accountId, userId, delta) => {
+  if (!accountId) return;
+
+  const account = await Account.findOne({ _id: accountId, userId });
   if (!account) {
     throw new ApiError("Account not found or does not belong to you.", 404);
   }
 
-  const newBalance = account.balance + delta;
-  if (newBalance < 0) {
+  if (account.balance + delta < 0) {
     throw new ApiError(
       `Insufficient balance in "${account.name}". ` +
         `Available: ₹${account.balance.toFixed(2)}, Required: ₹${Math.abs(delta).toFixed(2)}.`,
       400,
     );
   }
-  await Account.updateOne(
+
+  await Account.updateOne(
     { _id: accountId, userId },
     { $inc: { balance: delta } },
-    { session },
   );
 };
-
+
 export const getTransactions = async (userId, query = {}) => {
   const {
     category,
@@ -79,116 +80,108 @@ export const getTransactions = async (userId, query = {}) => {
     totalPages: Math.ceil(total / safeLimit),
   };
 };
-export const createTransaction = async (userId, data) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    const [transaction] = await Transaction.create(
-      [{ ...data, userId }],
-      { session },
-    );
 
+export const createTransaction = async (userId, data) => {
+  const transaction = await Transaction.create({ ...data, userId });
+
+  try {
     await applyBalanceDelta(
       data.accountId,
       userId,
       balanceDelta(data.type, data.amount),
-      session,
     );
-
-    await session.commitTransaction();
-    return transaction;
   } catch (err) {
-    await session.abortTransaction();
+    await Transaction.deleteOne({ _id: transaction._id });
     throw err;
-  } finally {
-    session.endSession();
   }
+
+  return transaction;
 };
-export const updateTransaction = async (transactionId, userId, updates) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    const transaction = await Transaction.findOne({ _id: transactionId, userId }).session(session);
 
-    if (!transaction) {
-      throw new ApiError(
-        "Transaction not found or you do not have permission to update it.",
-        404,
-      );
+export const updateTransaction = async (transactionId, userId, updates) => {
+  const transaction = await Transaction.findOne({ _id: transactionId, userId });
+
+  if (!transaction) {
+    throw new ApiError(
+      "Transaction not found or you do not have permission to update it.",
+      404,
+    );
+  }
+
+  const oldAccountId = transaction.accountId;
+  const oldType = transaction.type;
+  const oldAmount = transaction.amount;
+  const oldDelta = balanceDelta(oldType, oldAmount);
+
+  const allowedFields = ["amount", "type", "category", "description", "date", "goalId", "accountId"];
+  allowedFields.forEach((field) => {
+    if (updates[field] !== undefined) {
+      transaction[field] = updates[field];
     }
-    const oldAccountId = transaction.accountId;
-    const oldDelta = balanceDelta(transaction.type, transaction.amount);
+  });
 
-    const allowedFields = ["amount", "type", "category", "description", "date", "goalId", "accountId"];
-    allowedFields.forEach((field) => {
-      if (updates[field] !== undefined) {
-        transaction[field] = updates[field];
-      }
-    });
+  await transaction.save();
 
-    await transaction.save({ session });
+  const newAccountId = transaction.accountId;
+  const newDelta = balanceDelta(transaction.type, transaction.amount);
 
-    const newAccountId = transaction.accountId;
-    const newDelta = balanceDelta(transaction.type, transaction.amount);
+  const sameAccount = oldAccountId?.toString() === newAccountId?.toString();
 
-    const sameAccount =
-      oldAccountId?.toString() === newAccountId?.toString();
-
-    if (sameAccount) {      const netDelta = newDelta - oldDelta;
+  try {
+    if (sameAccount) {
+      const netDelta = newDelta - oldDelta;
       if (netDelta !== 0) {
-        await applyBalanceDelta(newAccountId, userId, netDelta, session);
+        await applyBalanceDelta(newAccountId, userId, netDelta);
       }
-    } else {      if (oldAccountId) {
-        await applyBalanceDelta(oldAccountId, userId, -oldDelta, session);
+    } else {
+      if (oldAccountId) {
+        await applyBalanceDelta(oldAccountId, userId, -oldDelta);
       }
       if (newAccountId) {
-        await applyBalanceDelta(newAccountId, userId, newDelta, session);
+        await applyBalanceDelta(newAccountId, userId, newDelta);
       }
     }
-
-    await session.commitTransaction();
-    return transaction;
   } catch (err) {
-    await session.abortTransaction();
+    const rollback = {};
+    allowedFields.forEach((field) => {
+      if (updates[field] !== undefined) rollback[field] = updates[field];
+    });
+    rollback.accountId = oldAccountId;
+    rollback.type = oldType;
+    rollback.amount = oldAmount;
+    await Transaction.updateOne({ _id: transactionId }, { $set: rollback });
     throw err;
-  } finally {
-    session.endSession();
   }
-};
-export const deleteTransaction = async (transactionId, userId) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  try {
-    const transaction = await Transaction.findOneAndDelete(
-      { _id: transactionId, userId },
-      { session },
-    );
 
-    if (!transaction) {
-      throw new ApiError(
-        "Transaction not found or you do not have permission to delete it.",
-        404,
-      );
-    }
-    if (transaction.accountId) {
+  return transaction;
+};
+
+export const deleteTransaction = async (transactionId, userId) => {
+  const transaction = await Transaction.findOneAndDelete({ _id: transactionId, userId });
+
+  if (!transaction) {
+    throw new ApiError(
+      "Transaction not found or you do not have permission to delete it.",
+      404,
+    );
+  }
+
+  if (transaction.accountId) {
+    try {
       await applyBalanceDelta(
         transaction.accountId,
         userId,
         -balanceDelta(transaction.type, transaction.amount),
-        session,
       );
+    } catch (err) {
+      await Transaction.create(transaction.toObject ? transaction.toObject() : transaction);
+      throw err;
     }
-
-    await session.commitTransaction();
-    return transaction;
-  } catch (err) {
-    await session.abortTransaction();
-    throw err;
-  } finally {
-    session.endSession();
   }
+
+  return transaction;
 };
-
+
 export const getTransactionSummary = async (
   userId,
   { startDate, endDate } = {},
