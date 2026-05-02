@@ -26,11 +26,11 @@ import ApiError from "../utils/ApiError.js";
   }
   return d;
 };
-const applyBalanceDelta = async (accountId, userId, delta, session) => {
-  if (!accountId) return; 
+const applyBalanceDelta = async (accountId, userId, delta) => {
+  if (!accountId) return;
 
-  const account = await Account.findOne({ _id: accountId, userId }).session(session);
-  if (!account) return; 
+  const account = await Account.findOne({ _id: accountId, userId });
+  if (!account) return;
 
   if (account.balance + delta < 0) {
     throw new Error(
@@ -42,7 +42,6 @@ import ApiError from "../utils/ApiError.js";
   await Account.updateOne(
     { _id: accountId },
     { $inc: { balance: delta } },
-    { session },
   );
 };
 export const getSubscriptions = async (userId) => {
@@ -203,41 +202,36 @@ import ApiError from "../utils/ApiError.js";
         ],
         { new: false }, 
       );
-      if (!sub) {
+      if (!sub) {
         break;
       }
-      const session = await mongoose.startSession();
-      session.startTransaction();
+      let createdTransaction = null;
+      try {
+        createdTransaction = await Transaction.create({
+          userId: sub.userId,
+          amount: sub.amount,
+          type: "expense",
+          category: sub.category,
+          description: sub.description
+            ? `[Auto] ${sub.description}`
+            : `[Auto] ${sub.name}`,
+          date: sub.nextBillingDate,
+          accountId: sub.accountId || null,
+        });
 
-      try {        await Transaction.create(
-          [
-            {
-              userId: sub.userId,
-              amount: sub.amount,
-              type: "expense",
-              category: sub.category,
-              description: sub.description
-                ? `[Auto] ${sub.description}`
-                : `[Auto] ${sub.name}`,
-              date: sub.nextBillingDate, 
-              accountId: sub.accountId || null,
-            },
-          ],
-          { session },
-        );
-        await applyBalanceDelta(
+        await applyBalanceDelta(
           sub.accountId,
           sub.userId,
           -sub.amount,
-          session,
         );
 
-        await session.commitTransaction();
         processed++;
       } catch (err) {
-        await session.abortTransaction();
+        if (createdTransaction) {
+          await Transaction.deleteOne({ _id: createdTransaction._id });
+        }
 
-                await Subscription.updateOne(
+        await Subscription.updateOne(
           { _id: sub._id },
           {
             $set: {
@@ -249,9 +243,7 @@ import ApiError from "../utils/ApiError.js";
 
         errors.push(`[${sub.name}] ${err.message}`);
         skipped++;
-        continueLoop = false; 
-      } finally {
-        session.endSession();
+        continueLoop = false;
       }
     }
   }
